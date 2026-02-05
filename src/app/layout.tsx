@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   },
   description: 'Experience luxury and comfort at our premium hotel. Perfect for business travelers and international guests.',
   keywords: ['hotel', 'luxury', 'accommodation', 'business travel', 'Seoul', '호텔', '숙박', '비즈니스'],
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export default function RootLayout({
