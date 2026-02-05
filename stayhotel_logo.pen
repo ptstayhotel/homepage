@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "children": [
+    {
+      "id": "root",
+      "type": "frame",
+      "name": "Document",
+      "children": []
+    }
+  ]
+}

@@ -97,9 +97,9 @@ export default function HeroSection({ locale }: HeroSectionProps) {
         ))}
       </div>
 
-      {/* Content - Centered */}
-      <div className="relative z-20 h-full flex items-center justify-center px-4">
-        <div className="text-center max-w-5xl pt-20">
+      {/* Content - Slightly above center */}
+      <div className="relative z-20 h-full flex items-start justify-center px-4 pt-[38vh]">
+        <div className="text-center max-w-5xl">
           {/* Main Title */}
           <div className="overflow-hidden">
             <h1

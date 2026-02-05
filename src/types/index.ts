@@ -44,11 +44,14 @@ export type ViewType = 'city' | 'garden' | 'pool' | 'mountain' | 'ocean';
 // Booking Types
 // ============================================
 
+export type ReservationType = 'general' | 'corporate' | 'military';
+
 export interface BookingFormData {
   roomId: string;
   checkIn: string; // ISO date string
   checkOut: string; // ISO date string
   guestCount: number;
+  reservationType: ReservationType;
   guestName: string;
   guestEmail: string;
   guestPhone: string;

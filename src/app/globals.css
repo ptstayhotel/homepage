@@ -390,3 +390,198 @@ a:hover {
 .overlay-fade:hover::before {
   opacity: 1;
 }
+
+/* ===================================
+   Date Picker - react-day-picker
+   =================================== */
+
+/* Shared base styles */
+.date-picker-dark .rdp-root,
+.date-picker-light .rdp-root {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  padding: 1.25rem;
+  border-radius: 2px;
+  width: 100%;
+}
+
+.date-picker-dark .rdp-month,
+.date-picker-light .rdp-month {
+  width: 100%;
+}
+
+.date-picker-dark .rdp-month_grid,
+.date-picker-light .rdp-month_grid {
+  width: 100%;
+}
+
+.date-picker-dark .rdp-weekday,
+.date-picker-light .rdp-weekday,
+.date-picker-dark .rdp-day,
+.date-picker-light .rdp-day {
+  width: 14.28%;
+  height: 48px;
+  text-align: center;
+}
+
+.date-picker-dark .rdp-day_button,
+.date-picker-light .rdp-day_button {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.date-picker-dark .rdp-months,
+.date-picker-light .rdp-months {
+  width: 100%;
+}
+
+/* Dark Theme (BookingBar) */
+.date-picker-dark .rdp-root {
+  --rdp-accent-color: #c9a227;
+  --rdp-accent-background-color: #c9a227;
+  background: #1a1a1f;
+  border: 1px solid #333;
+  color: #fff;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
+}
+
+.date-picker-dark .rdp-month_caption {
+  color: #fff;
+  font-weight: 500;
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  padding-bottom: 0.5rem;
+}
+
+.date-picker-dark .rdp-weekday {
+  color: #c9a227;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding-bottom: 0.5rem;
+}
+
+.date-picker-dark .rdp-day {
+  color: #ccc;
+  border-radius: 0;
+}
+
+.date-picker-dark .rdp-day:hover:not(.rdp-day_selected):not(.rdp-disabled) {
+  background: #2d2d35;
+  color: #fff;
+}
+
+.date-picker-dark .rdp-selected .rdp-day_button {
+  background: #c9a227;
+  color: #1a1a1f;
+  font-weight: 600;
+}
+
+.date-picker-dark .rdp-today:not(.rdp-selected) .rdp-day_button {
+  border-bottom: 2px solid #c9a227;
+  font-weight: 500;
+  color: #fff;
+}
+
+.date-picker-dark .rdp-outside {
+  color: #444;
+}
+
+.date-picker-dark .rdp-disabled {
+  color: #333;
+}
+
+.date-picker-dark .rdp-button_next,
+.date-picker-dark .rdp-button_previous {
+  color: #fff;
+}
+
+.date-picker-dark .rdp-button_next:hover,
+.date-picker-dark .rdp-button_previous:hover {
+  background: #2d2d35;
+}
+
+.date-picker-dark .rdp-chevron {
+  fill: #fff;
+}
+
+/* Light Theme (BookingForm) */
+.date-picker-light .rdp-root {
+  --rdp-accent-color: #1a1a1f;
+  --rdp-accent-background-color: #1a1a1f;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  color: #1a1a1f;
+  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.date-picker-light .rdp-month_caption {
+  color: #1a1a1f;
+  font-weight: 500;
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  padding-bottom: 0.5rem;
+}
+
+.date-picker-light .rdp-weekday {
+  color: #c9a227;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding-bottom: 0.5rem;
+}
+
+.date-picker-light .rdp-day {
+  color: #333;
+  border-radius: 0;
+}
+
+.date-picker-light .rdp-day:hover:not(.rdp-day_selected):not(.rdp-disabled) {
+  background: #f5f5f5;
+  color: #1a1a1f;
+}
+
+.date-picker-light .rdp-selected .rdp-day_button {
+  background: #1a1a1f;
+  color: #fff;
+  font-weight: 600;
+}
+
+.date-picker-light .rdp-today:not(.rdp-selected) .rdp-day_button {
+  border-bottom: 2px solid #c9a227;
+  font-weight: 500;
+}
+
+.date-picker-light .rdp-outside {
+  color: #ccc;
+}
+
+.date-picker-light .rdp-disabled {
+  color: #ddd;
+}
+
+.date-picker-light .rdp-chevron {
+  fill: #1a1a1f;
+}
+
+/* Date Picker mobile: center calendar */
+@media (max-width: 640px) {
+  .date-picker-dark,
+  .date-picker-light {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+  }
+}

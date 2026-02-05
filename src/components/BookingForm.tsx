@@ -9,24 +9,37 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from '@/lib/translations';
-import { Locale, BookingFormData } from '@/types';
+import { Locale, BookingFormData, ReservationType } from '@/types';
 import { rooms, getRoomName, formatPrice } from '@/config/rooms';
+import DatePickerInput from './DatePickerInput';
+import DropdownSelect from './DropdownSelect';
 import { getTodayString, getTomorrowString, calculateNights, formatCurrency } from '@/lib/utils';
 
 interface BookingFormProps {
   locale: Locale;
   preselectedRoomId?: string;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+  initialGuestCount?: number;
+  initialReservationType?: ReservationType;
+  initialStep?: 'dates' | 'room';
 }
 
 type FormStep = 'dates' | 'room' | 'info' | 'confirm' | 'success';
 
-export default function BookingForm({ locale, preselectedRoomId }: BookingFormProps) {
+const reservationTypeOptions: { value: ReservationType; label: Record<Locale, string> }[] = [
+  { value: 'general', label: { ko: '일반', en: 'General', ja: '一般', zh: '普通' } },
+  { value: 'corporate', label: { ko: '기업체', en: 'Corporate', ja: '法人', zh: '企业' } },
+  { value: 'military', label: { ko: '군인', en: 'Military', ja: '軍人', zh: '军人' } },
+];
+
+export default function BookingForm({ locale, preselectedRoomId, initialCheckIn, initialCheckOut, initialGuestCount, initialReservationType, initialStep }: BookingFormProps) {
   const t = useTranslations('booking');
   const tErrors = useTranslations('errors');
   const router = useRouter();
 
   // Form state
-  const [step, setStep] = useState<FormStep>('dates');
+  const [step, setStep] = useState<FormStep>(initialStep || 'dates');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingId, setBookingId] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -34,9 +47,10 @@ export default function BookingForm({ locale, preselectedRoomId }: BookingFormPr
   // Form data
   const [formData, setFormData] = useState<BookingFormData>({
     roomId: preselectedRoomId || '',
-    checkIn: getTodayString(),
-    checkOut: getTomorrowString(),
-    guestCount: 2,
+    checkIn: initialCheckIn || getTodayString(),
+    checkOut: initialCheckOut || getTomorrowString(),
+    guestCount: initialGuestCount || 2,
+    reservationType: initialReservationType || 'general',
     guestName: '',
     guestEmail: '',
     guestPhone: '',
@@ -131,7 +145,7 @@ export default function BookingForm({ locale, preselectedRoomId }: BookingFormPr
         setStep('dates');
         break;
       case 'info':
-        setStep(preselectedRoomId ? 'dates' : 'room');
+        setStep('room');
         break;
       case 'confirm':
         setStep('info');
@@ -236,45 +250,78 @@ export default function BookingForm({ locale, preselectedRoomId }: BookingFormPr
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <label className="form-label">{t('checkIn')}</label>
-                <input
-                  type="date"
-                  name="checkIn"
+                <DatePickerInput
                   value={formData.checkIn}
-                  onChange={handleChange}
-                  min={getTodayString()}
-                  className="w-full px-4 py-4 border-b border-neutral-300 text-sm focus:border-primary-900 focus:outline-none bg-transparent transition-colors"
-                  required
+                  onChange={(date) => {
+                    setFormData(prev => {
+                      const updated = { ...prev, checkIn: date };
+                      if (prev.checkOut <= date) {
+                        const nextDay = new Date(date + 'T00:00:00');
+                        nextDay.setDate(nextDay.getDate() + 1);
+                        const y = nextDay.getFullYear();
+                        const m = String(nextDay.getMonth() + 1).padStart(2, '0');
+                        const d = String(nextDay.getDate()).padStart(2, '0');
+                        updated.checkOut = `${y}-${m}-${d}`;
+                      }
+                      return updated;
+                    });
+                    setError('');
+                  }}
+                  minDate={getTodayString()}
+                  locale={locale}
+                  theme="light"
                 />
               </div>
 
               <div>
                 <label className="form-label">{t('checkOut')}</label>
-                <input
-                  type="date"
-                  name="checkOut"
+                <DatePickerInput
                   value={formData.checkOut}
-                  onChange={handleChange}
-                  min={formData.checkIn || getTodayString()}
-                  className="w-full px-4 py-4 border-b border-neutral-300 text-sm focus:border-primary-900 focus:outline-none bg-transparent transition-colors"
-                  required
+                  onChange={(date) => {
+                    setFormData(prev => ({ ...prev, checkOut: date }));
+                    setError('');
+                  }}
+                  minDate={formData.checkIn || getTodayString()}
+                  locale={locale}
+                  theme="light"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="form-label">{t('numberOfGuests')}</label>
-              <select
-                name="guestCount"
-                value={formData.guestCount}
-                onChange={handleChange}
-                className="w-full px-4 py-4 border-b border-neutral-300 text-sm focus:border-primary-900 focus:outline-none bg-transparent transition-colors appearance-none cursor-pointer"
-              >
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <option key={n} value={n}>
-                    {n} {{ ko: '명', en: n === 1 ? 'guest' : 'guests', ja: '名', zh: '位' }[locale]}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <label className="form-label">{t('numberOfGuests')}</label>
+                <DropdownSelect
+                  value={String(formData.guestCount)}
+                  onChange={(val) => {
+                    setFormData(prev => ({ ...prev, guestCount: Number(val) }));
+                    setError('');
+                  }}
+                  options={[1, 2, 3, 4, 5, 6].map((n) => ({
+                    value: String(n),
+                    label: `${n} ${{ ko: '명', en: n === 1 ? 'guest' : 'guests', ja: '名', zh: '位' }[locale]}`,
+                  }))}
+                  theme="light"
+                />
+              </div>
+
+              <div>
+                <label className="form-label">
+                  {{ ko: '예약 유형', en: 'Reservation Type', ja: '予約タイプ', zh: '预订类型' }[locale]}
+                </label>
+                <DropdownSelect
+                  value={formData.reservationType}
+                  onChange={(val) => {
+                    setFormData(prev => ({ ...prev, reservationType: val as ReservationType }));
+                    setError('');
+                  }}
+                  options={reservationTypeOptions.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label[locale],
+                  }))}
+                  theme="light"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -448,6 +495,14 @@ export default function BookingForm({ locale, preselectedRoomId }: BookingFormPr
                 </span>
               </div>
               <div className="flex justify-between p-4">
+                <span className="text-neutral-500 text-sm">
+                  {{ ko: '예약 유형', en: 'Reservation Type', ja: '予約タイプ', zh: '预订类型' }[locale]}
+                </span>
+                <span className="font-medium text-primary-900">
+                  {reservationTypeOptions.find(o => o.value === formData.reservationType)?.label[locale]}
+                </span>
+              </div>
+              <div className="flex justify-between p-4">
                 <span className="text-neutral-500 text-sm">{t('guestName')}</span>
                 <span className="font-medium text-primary-900">{formData.guestName}</span>
               </div>
@@ -524,6 +579,7 @@ export default function BookingForm({ locale, preselectedRoomId }: BookingFormPr
                     checkIn: getTodayString(),
                     checkOut: getTomorrowString(),
                     guestCount: 2,
+                    reservationType: 'general',
                     guestName: '',
                     guestEmail: '',
                     guestPhone: '',

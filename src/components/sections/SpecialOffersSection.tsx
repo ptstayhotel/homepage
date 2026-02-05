@@ -18,7 +18,6 @@ interface SpecialOffersSectionProps {
 const tabs: { key: TabType; label: { ko: string; en: string; ja: string; zh: string } }[] = [
   { key: 'all', label: { ko: '전체', en: 'ALL', ja: 'すべて', zh: '全部' } },
   { key: 'room', label: { ko: '객실 패키지', en: 'ROOM PACKAGE', ja: '客室パッケージ', zh: '客房套餐' } },
-  { key: 'dining', label: { ko: '다이닝', en: 'DINING', ja: 'ダイニング', zh: '餐饮' } },
   { key: 'event', label: { ko: '이벤트', en: 'EVENTS', ja: 'イベント', zh: '活动' } },
 ];
 

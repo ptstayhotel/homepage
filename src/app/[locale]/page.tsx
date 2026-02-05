@@ -11,6 +11,8 @@
 
 import { Locale } from '@/types';
 import HeroSection from '@/components/sections/HeroSection';
+import BookingBar from '@/components/BookingBar';
+
 
 import SpecialOffersSection from '@/components/sections/SpecialOffersSection';
 
@@ -28,11 +30,15 @@ export default async function HomePage({ params }: HomePageProps) {
       {/* Hero Section - Full Screen Slider */}
       <HeroSection locale={locale as Locale} />
 
+      {/* Booking Bar - Quick Reservation */}
+      <BookingBar locale={locale as Locale} />
+
+
       {/* Special Offers Section */}
       <SpecialOffersSection locale={locale as Locale} />
 
 
-{/* Blog Section */}
+      {/* Blog Section */}
       <BlogSection locale={locale as Locale} />
     </>
   );

@@ -9,7 +9,14 @@ import { createTranslator } from '@/lib/translations';
 
 interface BookingPageProps {
   params: { locale: string };
-  searchParams: { room?: string };
+  searchParams: {
+    room?: string;
+    checkIn?: string;
+    checkOut?: string;
+    guestCount?: string;
+    reservationType?: string;
+    step?: string;
+  };
 }
 
 export async function generateMetadata({ params }: BookingPageProps) {
@@ -24,6 +31,11 @@ export async function generateMetadata({ params }: BookingPageProps) {
 export default async function BookingPage({ params, searchParams }: BookingPageProps) {
   const { locale } = params;
   const preselectedRoom = searchParams?.room;
+  const initialCheckIn = searchParams?.checkIn;
+  const initialCheckOut = searchParams?.checkOut;
+  const initialGuestCount = searchParams?.guestCount;
+  const initialReservationType = searchParams?.reservationType;
+  const initialStep = searchParams?.step;
 
   const t = createTranslator(locale, 'booking');
 
@@ -63,6 +75,11 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             <BookingForm
               locale={locale as 'ko' | 'en' | 'ja' | 'zh'}
               preselectedRoomId={preselectedRoom}
+              initialCheckIn={initialCheckIn}
+              initialCheckOut={initialCheckOut}
+              initialGuestCount={initialGuestCount ? Number(initialGuestCount) : undefined}
+              initialReservationType={initialReservationType as 'general' | 'corporate' | 'military' | undefined}
+              initialStep={initialStep as 'dates' | 'room' | undefined}
             />
           </div>
         </div>

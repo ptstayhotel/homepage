@@ -88,12 +88,12 @@ export default function Navigation({ locale }: NavigationProps) {
   // Dynamic colors based on scroll state
   const headerBg = isScrolled ? 'bg-primary-900/95 backdrop-blur-sm shadow-md' : 'bg-transparent';
   const logoColor = 'text-white';
-  const borderColor = 'border-white/10';
+  const borderColor = 'border-white/15';
 
   return (
     <>
       {/* Fixed Header - Always visible with transition */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${headerBg}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${headerBg}`} style={{ textShadow: isScrolled ? 'none' : '0 1px 3px rgba(0,0,0,0.5)' }}>
         {/* 1st Row: Utility Bar */}
         <div className={`border-b transition-colors duration-300 ${borderColor}`}>
           <div className="container mx-auto px-6">
@@ -127,7 +127,7 @@ export default function Navigation({ locale }: NavigationProps) {
                         className={`flex items-center justify-between px-4 py-2.5 text-xs tracking-wider transition-colors ${
                           locale === lang.code
                             ? 'text-amber-400 bg-white/5'
-                            : 'text-white/70 hover:text-white hover:bg-white/5'
+                            : 'text-white/85 hover:text-white hover:bg-white/5'
                         }`}
                         onClick={() => setIsLangOpen(false)}
                       >
@@ -167,7 +167,7 @@ export default function Navigation({ locale }: NavigationProps) {
                   href={`/${locale}`}
                   className={`px-8 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname === `/${locale}`
                       ? 'text-white font-medium'
-                      : 'text-white/70 hover:text-white'
+                      : 'text-white/90 hover:text-white'
                     }`}
                 >
                   Home
@@ -180,7 +180,7 @@ export default function Navigation({ locale }: NavigationProps) {
                   href={`/${locale}/rooms`}
                   className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname.includes('/rooms')
                       ? 'text-white font-medium'
-                      : 'text-white/70 hover:text-white'
+                      : 'text-white/90 hover:text-white'
                     }`}
                 >
                   Rooms
@@ -193,7 +193,7 @@ export default function Navigation({ locale }: NavigationProps) {
                   href={`/${locale}/facilities`}
                   className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname.includes('/facilities')
                       ? 'text-white font-medium'
-                      : 'text-white/70 hover:text-white'
+                      : 'text-white/90 hover:text-white'
                     }`}
                 >
                   Facilities
@@ -206,7 +206,7 @@ export default function Navigation({ locale }: NavigationProps) {
                   href={`/${locale}/location`}
                   className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname.includes('/location')
                       ? 'text-white font-medium'
-                      : 'text-white/70 hover:text-white'
+                      : 'text-white/90 hover:text-white'
                     }`}
                 >
                   Location
@@ -219,7 +219,7 @@ export default function Navigation({ locale }: NavigationProps) {
                   href={`/${locale}/events`}
                   className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname.includes('/events')
                       ? 'text-white font-medium'
-                      : 'text-white/70 hover:text-white'
+                      : 'text-white/90 hover:text-white'
                     }`}
                 >
                   Events
@@ -232,7 +232,7 @@ export default function Navigation({ locale }: NavigationProps) {
                   href={`/${locale}/blog`}
                   className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname.includes('/blog')
                       ? 'text-white font-medium'
-                      : 'text-white/70 hover:text-white'
+                      : 'text-white/90 hover:text-white'
                     }`}
                 >
                   Blog

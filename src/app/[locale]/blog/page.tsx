@@ -26,7 +26,12 @@ export default async function BlogPage({ params }: PageProps) {
         <div className="min-h-screen bg-gray-50 pb-20">
             {/* Header Section */}
             <section className="relative h-[65vh] min-h-[500px] flex items-end justify-center overflow-hidden bg-primary-900 pb-16">
-                <div className="absolute inset-0 bg-black/40" />
+                <img
+                    src="https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=1920&auto=format&fit=crop"
+                    alt="Blog"
+                    className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
                 <div className="relative z-10 container mx-auto px-6 text-center text-white">
                     <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-normal text-white mb-6 tracking-wide">
                         Blog
@@ -43,7 +48,7 @@ export default async function BlogPage({ params }: PageProps) {
             </section>
 
             {/* Blog List Section */}
-            <div className="container mx-auto px-6 -mt-16 relative z-20">
+            <div className="container mx-auto px-6 pt-16 relative z-20">
                 <BlogList posts={posts} locale={locale} />
 
                 {/* Connection Status Message */}
