@@ -182,7 +182,7 @@ a:hover {
 
   /* Card Styles - Minimal & Elegant */
   .card {
-    @apply bg-white overflow-hidden transition-all duration-500 hover:shadow-2xl group;
+    @apply bg-white overflow-hidden transition-all duration-500 hover:shadow-2xl;
   }
 
   /* Form Styles */

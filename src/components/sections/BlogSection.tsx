@@ -26,7 +26,7 @@ export default async function BlogSection({ locale }: BlogSectionProps) {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
           <div>
             <h2 className="text-3xl md:text-4xl font-serif font-normal text-primary-900 tracking-wide">
-              Blog
+              {{ ko: '블로그', en: 'Blog', ja: 'ブログ', zh: '博客' }[locale]}
             </h2>
           </div>
           {blogId && blogId !== 'your_naver_blog_id' && (
