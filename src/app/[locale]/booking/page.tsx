@@ -37,8 +37,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const initialReservationType = searchParams?.reservationType;
   const initialStep = searchParams?.step;
 
-  const t = createTranslator(locale, 'booking');
-
   return (
     <>
       {/* Page Header */}

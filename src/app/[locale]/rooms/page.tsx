@@ -25,8 +25,6 @@ export async function generateMetadata({ params }: RoomsPageProps) {
 export default async function RoomsPage({ params }: RoomsPageProps) {
   const { locale } = params;
 
-  const t = createTranslator(locale, 'rooms');
-
   return (
     <>
       {/* Page Header */}

@@ -16,8 +16,6 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function BlogPage({ params }: PageProps) {
     const { locale } = params;
-    const t = createTranslator(locale, 'blog');
-
     // Fetch blog posts (limit 6)
     const blogId = getNaverBlogId();
     const { posts } = await fetchNaverBlogPosts(blogId, 6);

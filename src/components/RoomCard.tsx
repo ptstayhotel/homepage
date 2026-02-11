@@ -24,7 +24,6 @@ interface RoomCardProps {
 
 export default function RoomCard({ room, locale }: RoomCardProps) {
   const t = useTranslations('rooms');
-  const tCommon = useTranslations('common');
 
   const roomName = getRoomName(room, locale);
   const description = getRoomDescription(room, locale);
