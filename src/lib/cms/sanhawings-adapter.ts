@@ -35,6 +35,8 @@ interface SanhawingsRoomResponse {
   description: string;
   description_en: string;
   price: number;
+  friday_price?: number;
+  saturday_price?: number;
   max_guests: number;
   size_sqm: number;
   bed_type: string;
@@ -296,6 +298,8 @@ export class SanhawingsCMSAdapter extends BaseCMSAdapter {
       descriptionKo: apiRoom.description,
       descriptionEn: apiRoom.description_en,
       pricePerNight: apiRoom.price,
+      fridayPrice: apiRoom.friday_price ?? apiRoom.price,
+      saturdayPrice: apiRoom.saturday_price ?? apiRoom.price,
       maxGuests: apiRoom.max_guests,
       size: apiRoom.size_sqm,
       bedType: this.mapBedType(apiRoom.bed_type),

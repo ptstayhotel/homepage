@@ -28,6 +28,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# booking data
+/data/bookings.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

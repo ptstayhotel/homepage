@@ -3,12 +3,13 @@
  *
  * GET /api/rooms - Get all rooms
  * GET /api/rooms?id=xxx - Get room by ID
- * POST /api/rooms - Create a booking (sends email notification)
+ * POST /api/rooms - Create a booking (pending, sends email to hotel only)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { BookingFormData } from '@/types';
 import { rooms, getRoomById } from '@/config/rooms';
+import { saveBooking } from '@/lib/booking-store';
 import { sendBookingEmail } from '@/lib/email';
 
 /**
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST handler - Create booking via email notification
+ * POST handler - Create booking (pending) and send hotel notification
  */
 export async function POST(request: NextRequest) {
   try {
@@ -62,11 +63,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate booking ID immediately
+    // Generate booking ID
     const bookingId = 'BK-' + Date.now().toString(36).toUpperCase();
 
-    // Send emails in background (don't block the response)
-    sendBookingEmail(body, bookingId).catch((err) => {
+    // Save booking as pending
+    const booking = saveBooking(body, bookingId);
+
+    // Send notification to hotel only (with confirm button)
+    sendBookingEmail(body, bookingId, booking.token).catch((err) => {
       console.error('Background email send failed:', err);
     });
 

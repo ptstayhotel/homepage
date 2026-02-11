@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from '@/lib/translations';
 import { Locale, BookingFormData, ReservationType } from '@/types';
-import { rooms, getRoomName, formatPrice } from '@/config/rooms';
+import { rooms, getRoomName, formatPrice, calculateRoomTotal } from '@/config/rooms';
 import DatePickerInput from './DatePickerInput';
 import DropdownSelect from './DropdownSelect';
 import { getTodayString, getTomorrowString, calculateNights, formatCurrency } from '@/lib/utils';
@@ -67,9 +67,9 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
   // Get selected room
   const selectedRoom = rooms.find((r) => r.id === formData.roomId);
 
-  // Calculate total price
+  // Calculate total price (day-by-day for Fri/Sat rates)
   const nights = calculateNights(formData.checkIn, formData.checkOut);
-  const totalPrice = selectedRoom ? selectedRoom.pricePerNight * nights : 0;
+  const totalPrice = selectedRoom ? calculateRoomTotal(selectedRoom, formData.checkIn, formData.checkOut) : 0;
 
   // Handle form field changes
   const handleChange = (
@@ -385,7 +385,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                       <span className={`font-serif text-xl ${
                         formData.roomId === room.id ? 'text-accent-500' : 'text-primary-900'
                       }`}>
-                        {formatPrice(room.pricePerNight, locale)}
+                        {formatPrice(room.pricePerNight, locale)}~
                       </span>
                       <span className={`text-sm block ${
                         formData.roomId === room.id ? 'text-white/70' : 'text-neutral-500'
@@ -519,8 +519,11 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                 <div className="flex justify-between mb-2">
                   <span className="text-neutral-500 text-sm">{t('roomRate')}</span>
                   <span className="font-medium text-primary-900">
-                    {formatPrice(selectedRoom.pricePerNight, locale)} × {nights}{' '}
-                    {{ ko: '박', en: 'nights', ja: '泊', zh: '晚' }[locale]}
+                    {nights}{{ ko: '박', en: ' nights', ja: '泊', zh: '晚' }[locale]}
+                    {' '}
+                    <span className="text-neutral-400 text-xs">
+                      ({{ ko: '요일별 요금 적용', en: 'Daily rates applied', ja: '曜日別料金適用', zh: '按日费率计算' }[locale]})
+                    </span>
                   </span>
                 </div>
                 <div className="flex justify-between pt-4 border-t border-neutral-200">

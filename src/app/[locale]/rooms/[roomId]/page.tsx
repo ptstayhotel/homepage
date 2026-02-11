@@ -101,11 +101,31 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
 
               {/* Price */}
               <div className="bg-white/10 rounded-xl p-6 mb-8">
-                <div className="flex items-baseline gap-2">
+                <div className="flex items-baseline gap-2 mb-3">
                   <span className="text-4xl font-heading font-semibold text-accent-500">
                     {formatPrice(room.pricePerNight, locale as Locale)}
                   </span>
-                  <span className="text-neutral-300">{tCommon('perNight')}</span>
+                  <span className="text-neutral-300">~</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div className="bg-white/5 rounded-lg px-3 py-2 text-center">
+                    <span className="block text-neutral-400 text-xs mb-1">
+                      {{ ko: '일~목', en: 'Sun-Thu', ja: '日〜木', zh: '日~四' }[locale]}
+                    </span>
+                    <span className="text-white font-medium">{formatPrice(room.pricePerNight, locale as Locale)}</span>
+                  </div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2 text-center">
+                    <span className="block text-neutral-400 text-xs mb-1">
+                      {{ ko: '금요일', en: 'Friday', ja: '金曜日', zh: '周五' }[locale]}
+                    </span>
+                    <span className="text-accent-400 font-medium">{formatPrice(room.fridayPrice, locale as Locale)}</span>
+                  </div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2 text-center">
+                    <span className="block text-neutral-400 text-xs mb-1">
+                      {{ ko: '토요일', en: 'Saturday', ja: '土曜日', zh: '周六' }[locale]}
+                    </span>
+                    <span className="text-accent-400 font-medium">{formatPrice(room.saturdayPrice, locale as Locale)}</span>
+                  </div>
                 </div>
               </div>
 
@@ -229,9 +249,9 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
                     {tCommon('sqm')}
                   </p>
                   <span className="text-accent-600 font-semibold">
-                    {formatPrice(otherRoom.pricePerNight, locale as Locale)}
+                    {formatPrice(otherRoom.pricePerNight, locale as Locale)}~
                     <span className="text-neutral-400 font-normal text-sm">
-                      {tCommon('perNight')}
+                      {' '}{tCommon('perNight')}
                     </span>
                   </span>
                 </Link>

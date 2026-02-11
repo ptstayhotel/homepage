@@ -1,16 +1,19 @@
 /**
  * Email Utility for Booking Notifications
  *
- * Sends booking notification to hotel and confirmation to guest via Gmail SMTP.
+ * Two-phase booking flow:
+ * 1. sendBookingEmail() - Hotel gets notification with "Confirm" button
+ * 2. sendConfirmationEmail() - Guest gets confirmation + PDF after hotel confirms
  *
  * Required environment variables:
- * - SMTP_USER: Gmail address (e.g., ptstayhotel@gmail.com)
+ * - SMTP_USER: Gmail address
  * - SMTP_PASS: Gmail app password
+ * - SITE_URL: Site base URL (for confirm button link)
  */
 
 import nodemailer from 'nodemailer';
 import { BookingFormData } from '@/types';
-import { getRoomById, getRoomName, formatPrice } from '@/config/rooms';
+import { getRoomById, getRoomName, formatPrice, calculateRoomTotal } from '@/config/rooms';
 import { getBrandConfig } from '@/config/brand';
 import { generateBookingPDF } from './booking-pdf';
 
@@ -39,32 +42,34 @@ function calculateNights(checkIn: string, checkOut: string): number {
   return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-/**
- * Send booking notification email to hotel + confirmation to guest
- */
-export async function sendBookingEmail(
-  data: BookingFormData,
-  bookingId?: string,
-): Promise<{ success: boolean; bookingId: string; error?: string }> {
-  const transporter = getTransporter();
-  const brand = getBrandConfig();
-  const hotelEmail = brand.contact.email;
-  const hotelPhone = brand.contact.phone;
-  const brandName = brand.name.ko;
-
+function getBookingDetails(data: BookingFormData) {
   const room = getRoomById(data.roomId);
   const roomName = room ? getRoomName(room, 'ko') : data.roomId;
   const roomNameEn = room ? getRoomName(room, 'en') : data.roomId;
   const nights = calculateNights(data.checkIn, data.checkOut);
-  const totalPrice = room ? room.pricePerNight * nights : 0;
+  const totalPrice = room ? calculateRoomTotal(room, data.checkIn, data.checkOut) : 0;
   const priceText = room ? formatPrice(totalPrice, 'ko') : '-';
   const typeLabel = RESERVATION_TYPE_LABELS[data.reservationType]?.ko || data.reservationType;
+  return { room, roomName, roomNameEn, nights, totalPrice, priceText, typeLabel };
+}
 
-  if (!bookingId) {
-    bookingId = 'BK-' + Date.now().toString(36).toUpperCase();
-  }
+/**
+ * Phase 1: Send booking notification to HOTEL ONLY (with confirm button)
+ */
+export async function sendBookingEmail(
+  data: BookingFormData,
+  bookingId: string,
+  confirmToken: string,
+): Promise<{ success: boolean; error?: string }> {
+  const transporter = getTransporter();
+  const brand = getBrandConfig();
+  const hotelEmail = brand.contact.email;
+  const brandName = brand.name.ko;
+  const { roomName, roomNameEn, nights, priceText, typeLabel } = getBookingDetails(data);
 
-  // --- Hotel notification email ---
+  const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const confirmUrl = `${siteUrl}/api/booking-confirm?token=${confirmToken}`;
+
   const hotelHtml = `
 <div style="font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a2e;">
   <div style="background: #1a1a2e; padding: 24px 32px;">
@@ -121,18 +126,58 @@ export async function sendBookingEmail(
         <td style="padding: 12px 0;">${data.specialRequests}</td>
       </tr>` : ''}
     </table>
+
+    <!-- CONFIRM BUTTON -->
+    <div style="margin-top: 32px; text-align: center;">
+      <a href="${confirmUrl}" style="display: inline-block; padding: 16px 48px; background: #d4af37; color: #1a1a2e; font-size: 16px; font-weight: 700; text-decoration: none; letter-spacing: 1px;">
+        예약 확정하기
+      </a>
+      <p style="font-size: 12px; color: #aaa; margin-top: 12px;">위 버튼을 클릭하면 예약이 확정되고 고객에게 확인 메일이 발송됩니다.</p>
+    </div>
   </div>
 </div>`;
 
-  // --- Guest confirmation email ---
+  try {
+    await transporter.sendMail({
+      from: `"${brandName} 예약시스템" <${process.env.SMTP_USER}>`,
+      to: hotelEmail,
+      subject: `[STAY HOTEL] 새 예약 접수 - ${data.guestName} (${data.checkIn} ~ ${data.checkOut})`,
+      html: hotelHtml,
+    });
+
+    console.log(`📧 Hotel notification sent: ${bookingId} → ${hotelEmail}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Hotel email send failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send email',
+    };
+  }
+}
+
+/**
+ * Phase 2: Send confirmation email to GUEST (after hotel confirms)
+ */
+export async function sendConfirmationEmail(
+  data: BookingFormData,
+  bookingId: string,
+): Promise<{ success: boolean; error?: string }> {
+  const transporter = getTransporter();
+  const brand = getBrandConfig();
+  const hotelEmail = brand.contact.email;
+  const hotelPhone = brand.contact.phone;
+  const brandName = brand.name.ko;
+  const { roomName, nights, priceText } = getBookingDetails(data);
+
   const guestHtml = `
 <div style="font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a2e;">
   <div style="background: #1a1a2e; padding: 24px 32px; text-align: center;">
     <h1 style="color: #d4af37; font-size: 18px; margin: 0; letter-spacing: 2px;">${brandName}</h1>
   </div>
   <div style="padding: 32px; border: 1px solid #e5e5e5; border-top: none;">
-    <h2 style="font-size: 20px; margin: 0 0 8px 0; text-align: center;">예약 접수가 완료되었습니다</h2>
-    <p style="text-align: center; font-size: 13px; color: #888; margin: 0 0 24px 0;">Your booking request has been received.</p>
+    <h2 style="font-size: 20px; margin: 0 0 8px 0; text-align: center;">예약이 확정되었습니다</h2>
+    <p style="text-align: center; font-size: 13px; color: #888; margin: 0 0 24px 0;">Your booking has been confirmed.</p>
 
     <div style="background: #f8f8f8; padding: 20px; margin-bottom: 24px;">
       <p style="font-size: 12px; color: #888; margin: 0 0 4px 0;">예약번호 / Booking No.</p>
@@ -164,9 +209,9 @@ export async function sendBookingEmail(
 
     <div style="margin-top: 24px; padding: 16px; background: #fffbeb; border-left: 3px solid #d4af37; font-size: 13px; color: #666;">
       <p style="margin: 0 0 8px 0;"><strong>안내사항</strong></p>
-      <p style="margin: 0 0 4px 0;">- 예약 확정은 호텔에서 확인 후 별도 연락드립니다.</p>
       <p style="margin: 0 0 4px 0;">- 결제는 현장에서 진행됩니다 (카드/현금).</p>
-      <p style="margin: 0;">- Confirmation will be sent separately by the hotel.</p>
+      <p style="margin: 0 0 4px 0;">- 체크인 24시간 전까지 무료 취소 가능합니다.</p>
+      <p style="margin: 0;">- Payment will be processed on-site (card / cash).</p>
     </div>
 
     <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e5e5; text-align: center; font-size: 13px; color: #888;">
@@ -186,30 +231,20 @@ export async function sendBookingEmail(
       contentType: 'application/pdf' as const,
     };
 
-    // Send to hotel
-    await transporter.sendMail({
-      from: `"${brandName} 예약시스템" <${process.env.SMTP_USER}>`,
-      to: hotelEmail,
-      subject: `[STAY HOTEL] 새 예약 접수 - ${data.guestName} (${data.checkIn} ~ ${data.checkOut})`,
-      html: hotelHtml,
-    });
-
-    // Send confirmation to guest with PDF attachment
     await transporter.sendMail({
       from: `"${brandName}" <${process.env.SMTP_USER}>`,
       to: data.guestEmail,
-      subject: `[STAY HOTEL] 예약 접수 확인 / Booking Confirmation - ${bookingId}`,
+      subject: `[STAY HOTEL] 예약 확정 / Booking Confirmed - ${bookingId}`,
       html: guestHtml,
       attachments: [pdfAttachment],
     });
 
-    console.log(`📧 Booking email sent: ${bookingId} → ${hotelEmail}, ${data.guestEmail}`);
-    return { success: true, bookingId };
+    console.log(`📧 Guest confirmation sent: ${bookingId} → ${data.guestEmail}`);
+    return { success: true };
   } catch (error) {
-    console.error('Email send failed:', error);
+    console.error('Guest email send failed:', error);
     return {
       success: false,
-      bookingId: '',
       error: error instanceof Error ? error.message : 'Failed to send email',
     };
   }

@@ -53,7 +53,7 @@ export default function RoomCard({ room, locale }: RoomCardProps) {
           <div className="absolute bottom-6 left-6 right-6 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
             <div className="flex items-baseline gap-2">
               <span className="font-serif text-2xl text-white">{formatPrice(room.pricePerNight, locale)}</span>
-              <span className="text-white/70 text-sm">{tCommon('perNight')}</span>
+              <span className="text-white/70 text-sm">~</span>
             </div>
           </div>
         </div>

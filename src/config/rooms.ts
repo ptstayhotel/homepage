@@ -51,6 +51,8 @@ export const rooms: Room[] = [
     descriptionEn:
       'A cozy and comfortable standard room perfect for business trips or short stays. Equipped with essential amenities, featuring a queen-size bed and a pleasant bathroom for a restful experience.',
     pricePerNight: 70000,
+    fridayPrice: 80000,
+    saturdayPrice: 90000,
     maxGuests: 2,
     size: 20,
     bedType: 'queen',
@@ -75,6 +77,8 @@ export const rooms: Room[] = [
     descriptionEn:
       'An upgraded version of our standard room with more space and additional amenities. Experience enhanced comfort with premium bedding and luxury toiletries.',
     pricePerNight: 80000,
+    fridayPrice: 90000,
+    saturdayPrice: 100000,
     maxGuests: 2,
     size: 25,
     bedType: 'queen',
@@ -99,6 +103,8 @@ export const rooms: Room[] = [
     descriptionEn:
       'A sophisticated deluxe room with elegant interiors and spacious layout. Features a king-size bed, luxury bathtub, and city views - perfect for both business and leisure travelers.',
     pricePerNight: 90000,
+    fridayPrice: 100000,
+    saturdayPrice: 110000,
     maxGuests: 2,
     size: 30,
     bedType: 'king',
@@ -123,6 +129,8 @@ export const rooms: Room[] = [
     descriptionEn:
       'Optimized for family travel with twin bed configuration. Features two double beds accommodating up to 4 guests comfortably. Spacious layout with family-friendly amenities.',
     pricePerNight: 90000,
+    fridayPrice: 100000,
+    saturdayPrice: 110000,
     maxGuests: 4,
     size: 32,
     bedType: 'twin',
@@ -150,6 +158,8 @@ export const rooms: Room[] = [
     descriptionEn:
       'A spacious room designed for larger families. Features one double bed and two single beds, accommodating up to 5 guests. Includes a separate dressing area and large bathroom.',
     pricePerNight: 110000,
+    fridayPrice: 130000,
+    saturdayPrice: 150000,
     maxGuests: 5,
     size: 38,
     bedType: 'twin',
@@ -178,6 +188,8 @@ export const rooms: Room[] = [
     descriptionEn:
       'Our premium luxury suite offering the finest accommodations. Features separate living room and bedroom, large jacuzzi bath, and panoramic city views. Perfect for VIP guests and special occasions.',
     pricePerNight: 130000,
+    fridayPrice: 150000,
+    saturdayPrice: 170000,
     maxGuests: 2,
     size: 45,
     bedType: 'king',
@@ -202,7 +214,9 @@ export const rooms: Room[] = [
       '특별한 모임을 위한 최대 규모의 스위트 객실입니다. 넓은 거실 공간은 소규모 파티나 비즈니스 미팅에 적합하며, 최대 6인이 투숙 가능합니다. 프라이빗한 분위기에서 특별한 순간을 만드세요.',
     descriptionEn:
       'Our largest suite designed for special gatherings. The spacious living area is perfect for intimate parties or business meetings, accommodating up to 6 guests. Create memorable moments in a private setting.',
-    pricePerNight: 200000,
+    pricePerNight: 160000,
+    fridayPrice: 180000,
+    saturdayPrice: 200000,
     maxGuests: 6,
     size: 60,
     bedType: 'king',
@@ -242,6 +256,31 @@ export const getRoomBySlug = (slug: string): Room | undefined => {
  */
 export const getAvailableRooms = (): Room[] => {
   return rooms.filter((room) => room.isAvailable);
+};
+
+/**
+ * Get price for a specific date based on day of week
+ * Friday(5) uses fridayPrice, Saturday(6) uses saturdayPrice, others use pricePerNight
+ */
+export const getPriceForDate = (room: Room, date: Date): number => {
+  const day = date.getDay();
+  if (day === 5) return room.fridayPrice;
+  if (day === 6) return room.saturdayPrice;
+  return room.pricePerNight;
+};
+
+/**
+ * Calculate total price for a stay period (day-by-day)
+ */
+export const calculateRoomTotal = (room: Room, checkIn: string, checkOut: string): number => {
+  let total = 0;
+  const current = new Date(checkIn + 'T00:00:00');
+  const end = new Date(checkOut + 'T00:00:00');
+  while (current < end) {
+    total += getPriceForDate(room, current);
+    current.setDate(current.getDate() + 1);
+  }
+  return total;
 };
 
 /**

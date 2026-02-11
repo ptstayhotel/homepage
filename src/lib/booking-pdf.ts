@@ -7,7 +7,7 @@
 import { PDFDocument, rgb, PDFFont, PDFPage } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { BookingFormData } from '@/types';
-import { getRoomById, getRoomName, formatPrice } from '@/config/rooms';
+import { getRoomById, getRoomName, formatPrice, calculateRoomTotal } from '@/config/rooms';
 import { getBrandConfig } from '@/config/brand';
 import fs from 'fs';
 import path from 'path';
@@ -91,7 +91,7 @@ export async function generateBookingPDF(
   const room = getRoomById(data.roomId);
   const roomName = room ? getRoomName(room, 'en') : data.roomId;
   const nights = calculateNights(data.checkIn, data.checkOut);
-  const totalPrice = room ? room.pricePerNight * nights : 0;
+  const totalPrice = room ? calculateRoomTotal(room, data.checkIn, data.checkOut) : 0;
   const priceText = room ? formatPrice(totalPrice, 'ko') : '-';
 
   const W = 595;
