@@ -30,12 +30,12 @@ export default async function RoomsPage({ params }: RoomsPageProps) {
   return (
     <>
       {/* Page Header */}
-      <section className="relative h-[65vh] min-h-[500px] flex items-end justify-center overflow-hidden pb-16">
+      <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden">
         {/* Background */}
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1920&auto=format&fit=crop)',
+            backgroundImage: 'url(/images/rooms/royal-suite/9.JPG)',
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-primary-900/70 via-primary-900/50 to-primary-900/80" />
@@ -50,9 +50,6 @@ export default async function RoomsPage({ params }: RoomsPageProps) {
             <div className="w-1.5 h-1.5 rotate-45 bg-accent-500" />
             <div className="w-12 h-px bg-accent-500" />
           </div>
-          <p className="text-white/80 text-lg max-w-2xl mx-auto font-light tracking-wide">
-            {t('subtitle')}
-          </p>
         </div>
       </section>
 

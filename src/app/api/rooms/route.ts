@@ -1,43 +1,35 @@
 /**
  * Rooms API Route
  *
- * Handles room-related API requests using the CMS adapter.
- *
  * GET /api/rooms - Get all rooms
  * GET /api/rooms?id=xxx - Get room by ID
- * POST /api/rooms - Create a booking
+ * POST /api/rooms - Create a booking (sends email notification)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCMSAdapter } from '@/lib/cms';
 import { BookingFormData } from '@/types';
+import { rooms, getRoomById } from '@/config/rooms';
+import { sendBookingEmail } from '@/lib/email';
 
 /**
- * GET handler - Fetch rooms
+ * GET handler - Fetch rooms from static config
  */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const roomId = searchParams.get('id');
 
-    const cms = getCMSAdapter();
-
     if (roomId) {
-      // Get single room
-      const room = await cms.getRoomById(roomId);
-
+      const room = getRoomById(roomId);
       if (!room) {
         return NextResponse.json(
           { success: false, error: 'Room not found' },
           { status: 404 }
         );
       }
-
       return NextResponse.json({ success: true, data: room });
     }
 
-    // Get all rooms
-    const rooms = await cms.getRooms();
     return NextResponse.json({ success: true, data: rooms });
   } catch (error) {
     console.error('API Error:', error);
@@ -49,7 +41,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST handler - Create booking
+ * POST handler - Create booking via email notification
  */
 export async function POST(request: NextRequest) {
   try {
@@ -70,36 +62,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const cms = getCMSAdapter();
+    // Generate booking ID immediately
+    const bookingId = 'BK-' + Date.now().toString(36).toUpperCase();
 
-    // Check availability
-    const isAvailable = await cms.checkAvailability(body.roomId, body.checkIn, body.checkOut);
-
-    if (!isAvailable) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'ROOM_UNAVAILABLE',
-          message: 'Room is not available for the selected dates',
-        },
-        { status: 409 }
-      );
-    }
-
-    // Create booking
-    const result = await cms.createBooking(body);
-
-    if (!result.success) {
-      return NextResponse.json(
-        { success: false, error: result.error, message: result.message },
-        { status: 400 }
-      );
-    }
+    // Send emails in background (don't block the response)
+    sendBookingEmail(body, bookingId).catch((err) => {
+      console.error('Background email send failed:', err);
+    });
 
     return NextResponse.json({
       success: true,
-      bookingId: result.bookingId,
-      message: result.message,
+      bookingId,
+      message: 'Booking request sent successfully',
     });
   } catch (error) {
     console.error('Booking Error:', error);

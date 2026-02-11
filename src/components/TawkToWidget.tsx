@@ -51,22 +51,23 @@ export default function TawkToWidget() {
   useEffect(() => {
     // Only load if properly configured
     if (!isTawkConfigured()) {
-      console.log('Tawk.to not configured - skipping widget load');
       return;
     }
 
-    const { propertyId, widgetId } = getTawkConfig();
+    // Defer loading by 3 seconds to not block initial page load
+    const timeout = setTimeout(() => {
+      const { propertyId, widgetId } = getTawkConfig();
 
-    // Initialize Tawk.to
-    window.Tawk_API = window.Tawk_API || {};
-    window.Tawk_LoadStart = new Date();
+      // Initialize Tawk.to
+      window.Tawk_API = window.Tawk_API || {};
+      window.Tawk_LoadStart = new Date();
 
-    // Create and load the script
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `https://embed.tawk.to/${propertyId}/${widgetId}`;
-    script.charset = 'UTF-8';
-    script.setAttribute('crossorigin', '*');
+      // Create and load the script
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://embed.tawk.to/${propertyId}/${widgetId}`;
+      script.charset = 'UTF-8';
+      script.setAttribute('crossorigin', '*');
 
     // Add script to document
     const firstScript = document.getElementsByTagName('script')[0];
@@ -78,33 +79,22 @@ export default function TawkToWidget() {
 
     // Optional: Configure widget after load
     window.Tawk_API.onLoad = function () {
-      console.log('Tawk.to widget loaded');
-
-      // You can customize the widget here, for example:
-      // window.Tawk_API?.setAttributes?.({
-      //   'name': 'Guest',
-      //   'email': '',
-      //   'hash': ''
-      // });
+      // Widget loaded
     };
+    }, 3000); // 3 second delay
 
     // Cleanup function
     return () => {
+      clearTimeout(timeout);
+
       // Remove the script when component unmounts
-      const tawkScript = document.querySelector(
-        `script[src*="embed.tawk.to/${propertyId}"]`
-      );
-      if (tawkScript) {
-        tawkScript.remove();
-      }
+      const tawkScript = document.querySelector('script[src*="embed.tawk.to"]');
+      if (tawkScript) tawkScript.remove();
 
       // Remove Tawk.to iframe
       const tawkIframe = document.querySelector('iframe[title*="Tawk"]');
-      if (tawkIframe) {
-        tawkIframe.remove();
-      }
+      if (tawkIframe) tawkIframe.remove();
 
-      // Clean up global variables
       delete window.Tawk_API;
       delete window.Tawk_LoadStart;
     };

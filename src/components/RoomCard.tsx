@@ -10,9 +10,12 @@
  */
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslations } from '@/lib/translations';
 import { Room, Locale } from '@/types';
 import { getRoomName, getRoomDescription, formatPrice } from '@/config/rooms';
+
+const BLUR_PLACEHOLDER = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCAADAAQDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAABv/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AhgA//9k=';
 
 interface RoomCardProps {
   room: Room;
@@ -32,10 +35,15 @@ export default function RoomCard({ room, locale }: RoomCardProps) {
       <div className="bg-white overflow-hidden">
         {/* Image Container */}
         <div className="relative aspect-[4/3] overflow-hidden">
-          <img
+          <Image
             src={primaryImage.url}
             alt={primaryImage.alt}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+            fill
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            quality={75}
+            placeholder="blur"
+            blurDataURL={BLUR_PLACEHOLDER}
           />
 
           {/* Gradient Overlay */}

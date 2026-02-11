@@ -25,7 +25,7 @@ export default async function BlogPage({ params }: PageProps) {
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             {/* Header Section */}
-            <section className="relative h-[65vh] min-h-[500px] flex items-end justify-center overflow-hidden bg-primary-900 pb-16">
+            <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden bg-primary-900">
                 <img
                     src="https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=1920&auto=format&fit=crop"
                     alt="Blog"
@@ -41,9 +41,6 @@ export default async function BlogPage({ params }: PageProps) {
                         <div className="w-1.5 h-1.5 rotate-45 bg-accent-500" />
                         <div className="w-12 h-px bg-accent-500" />
                     </div>
-                    <p className="text-white/80 text-lg font-light max-w-2xl mx-auto tracking-wide">
-                        {t('subtitle')}
-                    </p>
                 </div>
             </section>
 

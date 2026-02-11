@@ -27,6 +27,14 @@ const languageOptions: { code: Locale; label: string; short: string }[] = [
   { code: 'zh', label: '中文', short: 'CHN' },
 ];
 
+const menuItems: { key: string; path: string; label: Record<Locale, string> }[] = [
+  { key: 'home', path: '', label: { ko: '홈', en: 'Home', ja: 'ホーム', zh: '首页' } },
+  { key: 'rooms', path: '/rooms', label: { ko: '객실', en: 'Rooms', ja: '客室', zh: '客房' } },
+  { key: 'facilities', path: '/facilities', label: { ko: '시설', en: 'Facilities', ja: '施設', zh: '设施' } },
+  { key: 'location', path: '/location', label: { ko: '오시는 길', en: 'Location', ja: 'アクセス', zh: '位置' } },
+  { key: 'events', path: '/events', label: { ko: '이벤트', en: 'Events', ja: 'イベント', zh: '活动' } },
+];
+
 export default function Navigation({ locale }: NavigationProps) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -41,11 +49,18 @@ export default function Navigation({ locale }: NavigationProps) {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 50);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -78,11 +93,16 @@ export default function Navigation({ locale }: NavigationProps) {
 
   const pathWithoutLocale = getPathWithoutLocale();
 
-  const bookingText: Record<string, string> = {
+  const bookingText: Record<Locale, string> = {
     ko: '예약하기',
     en: 'Booking',
     ja: '予約する',
     zh: '立即预订',
+  };
+
+  const isActive = (path: string) => {
+    if (path === '') return pathname === `/${locale}`;
+    return pathname.includes(path);
   };
 
   // Dynamic colors based on scroll state
@@ -162,90 +182,29 @@ export default function Navigation({ locale }: NavigationProps) {
           <div className="container mx-auto px-6">
             <nav className="hidden lg:flex justify-center items-center h-12">
               <div className="flex items-center">
-                {/* Home */}
-                <Link
-                  href={`/${locale}`}
-                  className={`px-8 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname === `/${locale}`
-                      ? 'text-white font-medium'
-                      : 'text-white/90 hover:text-white'
-                    }`}
-                >
-                  Home
-                  <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-amber-400 transition-all duration-300 ${pathname === `/${locale}` ? 'w-6' : 'w-0 group-hover:w-6'
+                {menuItems.map((item) => (
+                  <Link
+                    key={item.key}
+                    href={`/${locale}${item.path}`}
+                    className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${
+                      isActive(item.path)
+                        ? 'text-white font-medium'
+                        : 'text-white/90 hover:text-white'
+                    } ${item.key === 'home' ? 'px-8' : ''}`}
+                  >
+                    {item.label[locale]}
+                    <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-amber-400 transition-all duration-300 ${
+                      isActive(item.path) ? 'w-6' : 'w-0 group-hover:w-6'
                     }`} />
-                </Link>
-
-                {/* Rooms */}
-                <Link
-                  href={`/${locale}/rooms`}
-                  className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname.includes('/rooms')
-                      ? 'text-white font-medium'
-                      : 'text-white/90 hover:text-white'
-                    }`}
-                >
-                  Rooms
-                  <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-amber-400 transition-all duration-300 ${pathname.includes('/rooms') ? 'w-6' : 'w-0 group-hover:w-6'
-                    }`} />
-                </Link>
-
-                {/* Facilities - No dropdown */}
-                <Link
-                  href={`/${locale}/facilities`}
-                  className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname.includes('/facilities')
-                      ? 'text-white font-medium'
-                      : 'text-white/90 hover:text-white'
-                    }`}
-                >
-                  Facilities
-                  <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-amber-400 transition-all duration-300 ${pathname.includes('/facilities') ? 'w-6' : 'w-0 group-hover:w-6'
-                    }`} />
-                </Link>
-
-                {/* Location - No dropdown */}
-                <Link
-                  href={`/${locale}/location`}
-                  className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname.includes('/location')
-                      ? 'text-white font-medium'
-                      : 'text-white/90 hover:text-white'
-                    }`}
-                >
-                  Location
-                  <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-amber-400 transition-all duration-300 ${pathname.includes('/location') ? 'w-6' : 'w-0 group-hover:w-6'
-                    }`} />
-                </Link>
-
-                {/* Event - No dropdown */}
-                <Link
-                  href={`/${locale}/events`}
-                  className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname.includes('/events')
-                      ? 'text-white font-medium'
-                      : 'text-white/90 hover:text-white'
-                    }`}
-                >
-                  Events
-                  <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-amber-400 transition-all duration-300 ${pathname.includes('/events') ? 'w-6' : 'w-0 group-hover:w-6'
-                    }`} />
-                </Link>
-
-                {/* Blog - No dropdown */}
-                <Link
-                  href={`/${locale}/blog`}
-                  className={`px-6 py-3 text-sm tracking-wider uppercase transition-all duration-300 relative group ${pathname.includes('/blog')
-                      ? 'text-white font-medium'
-                      : 'text-white/90 hover:text-white'
-                    }`}
-                >
-                  Blog
-                  <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 bg-amber-400 transition-all duration-300 ${pathname.includes('/blog') ? 'w-6' : 'w-0 group-hover:w-6'
-                    }`} />
-                </Link>
+                  </Link>
+                ))}
 
                 {/* Booking */}
                 <Link
                   href={`/${locale}/booking`}
                   className="ml-4 px-6 py-2 text-sm tracking-wider uppercase transition-all duration-300 border border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-primary-900"
                 >
-                  {bookingText[locale] || 'Booking'}
+                  {bookingText[locale]}
                 </Link>
               </div>
             </nav>
@@ -277,53 +236,22 @@ export default function Navigation({ locale }: NavigationProps) {
         }`}>
         <div className="container mx-auto px-6 pt-[140px] pb-8 h-full overflow-y-auto">
           <div className="space-y-0">
-            <Link
-              href={`/${locale}`}
-              className={`block py-4 text-lg tracking-wider border-b border-white/10 transition-colors ${pathname === `/${locale}` ? 'text-amber-400' : 'text-white/80'
+            {menuItems.map((item) => (
+              <Link
+                key={item.key}
+                href={`/${locale}${item.path}`}
+                className={`block py-4 text-lg tracking-wider border-b border-white/10 transition-colors ${
+                  isActive(item.path) ? 'text-amber-400' : 'text-white/80'
                 }`}
-            >
-              Home
-            </Link>
-            <Link
-              href={`/${locale}/rooms`}
-              className={`block py-4 text-lg tracking-wider border-b border-white/10 transition-colors ${pathname.includes('/rooms') ? 'text-amber-400' : 'text-white/80'
-                }`}
-            >
-              Rooms
-            </Link>
-            <Link
-              href={`/${locale}/facilities`}
-              className={`block py-4 text-lg tracking-wider border-b border-white/10 transition-colors ${pathname.includes('/facilities') ? 'text-amber-400' : 'text-white/80'
-                }`}
-            >
-              Facilities
-            </Link>
-            <Link
-              href={`/${locale}/location`}
-              className={`block py-4 text-lg tracking-wider border-b border-white/10 transition-colors ${pathname.includes('/location') ? 'text-amber-400' : 'text-white/80'
-                }`}
-            >
-              Location
-            </Link>
-            <Link
-              href={`/${locale}/events`}
-              className={`block py-4 text-lg tracking-wider border-b border-white/10 transition-colors ${pathname.includes('/events') ? 'text-amber-400' : 'text-white/80'
-                }`}
-            >
-              Events
-            </Link>
-            <Link
-              href={`/${locale}/blog`}
-              className={`block py-4 text-lg tracking-wider border-b border-white/10 transition-colors ${pathname.includes('/blog') ? 'text-amber-400' : 'text-white/80'
-                }`}
-            >
-              Blog
-            </Link>
+              >
+                {item.label[locale]}
+              </Link>
+            ))}
             <Link
               href={`/${locale}/booking`}
               className="block py-4 text-lg tracking-wider border-b border-white/10 text-amber-400 transition-colors"
             >
-              {bookingText[locale] || 'Booking'}
+              {bookingText[locale]}
             </Link>
           </div>
 

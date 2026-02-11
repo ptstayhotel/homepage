@@ -21,8 +21,8 @@ import { getMessages, TranslationProvider } from '@/lib/translations';
 // Supported locales
 const locales = ['ko', 'en', 'ja', 'zh'] as const;
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
+// Enable static generation with revalidation
+export const revalidate = 3600; // revalidate every hour
 
 // Load fonts
 const playfair = Playfair_Display({

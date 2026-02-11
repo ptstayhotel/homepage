@@ -20,12 +20,12 @@ export default async function LocationPage({ params }: PageProps) {
     return (
         <div className="min-h-screen bg-white pb-20">
             {/* Header Section - Matches Rooms Page Style */}
-            <section className="relative h-[65vh] min-h-[500px] flex items-end justify-center overflow-hidden pb-16">
+            <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden">
                 {/* Background */}
                 <div
                     className="absolute inset-0 bg-cover bg-center"
                     style={{
-                        backgroundImage: 'url(https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=2613&auto=format&fit=crop)', // Urban/City feel image
+                        backgroundImage: 'url(/images/rooms/standard/5.JPG)',
                     }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-primary-900/70 via-primary-900/50 to-primary-900/80" />
@@ -40,9 +40,6 @@ export default async function LocationPage({ params }: PageProps) {
                         <div className="w-1.5 h-1.5 rotate-45 bg-accent-500" />
                         <div className="w-12 h-px bg-accent-500" />
                     </div>
-                    <p className="text-white/80 text-lg max-w-2xl mx-auto font-light tracking-wide">
-                        {t('subtitle')}
-                    </p>
                 </div>
             </section>
 

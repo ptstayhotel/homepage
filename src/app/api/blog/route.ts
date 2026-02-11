@@ -10,6 +10,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchNaverBlogPosts, getNaverBlogId } from '@/lib/utils/blog';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET handler - Fetch blog posts from Naver RSS
  */

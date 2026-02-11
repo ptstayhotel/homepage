@@ -10,18 +10,42 @@ export async function generateMetadata({ params }: PageProps) {
     };
 }
 
+const facilities = [
+    {
+        name: { ko: '피트니스 센터', en: 'Fitness Center', ja: 'フィットネスセンター', zh: '健身中心' },
+        desc: { ko: '최신 운동 기구를 갖춘 피트니스 센터', en: 'Fully equipped fitness center with modern equipment', ja: '最新のトレーニング機器を備えたフィットネスセンター', zh: '配备现代化设备的健身中心' },
+        image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop',
+    },
+    {
+        name: { ko: '레스토랑', en: 'Restaurant', ja: 'レストラン', zh: '餐厅' },
+        desc: { ko: '조식 및 다양한 메뉴를 제공하는 레스토랑', en: 'Restaurant serving breakfast and various cuisines', ja: '朝食や多彩なメニューをご提供するレストラン', zh: '提供早餐及各种美食的餐厅' },
+        image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1200&auto=format&fit=crop',
+    },
+    {
+        name: { ko: '세탁실', en: 'Laundry Room', ja: 'ランドリールーム', zh: '洗衣房' },
+        desc: { ko: '24시간 이용 가능한 셀프 세탁실', en: '24-hour self-service laundry room', ja: '24時間利用可能なセルフランドリー', zh: '24小时自助洗衣房' },
+        image: 'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?q=80&w=1200&auto=format&fit=crop',
+    },
+    {
+        name: { ko: '비즈니스 센터', en: 'Business Center', ja: 'ビジネスセンター', zh: '商务中心' },
+        desc: { ko: '프린터, PC 등을 갖춘 비즈니스 센터', en: 'Business center with printer, PC and more', ja: 'プリンター・PC完備のビジネスセンター', zh: '配备打印机和电脑的商务中心' },
+        image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop',
+    },
+];
+
 export default async function FacilitiesPage({ params }: PageProps) {
     const { locale } = params;
+    const loc = locale as 'ko' | 'en' | 'ja' | 'zh';
 
     return (
         <div className="min-h-screen bg-white pb-20">
             {/* Header Section */}
-            <section className="relative h-[65vh] min-h-[500px] flex items-end justify-center overflow-hidden pb-16">
+            <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden">
                 {/* Background */}
                 <div
                     className="absolute inset-0 bg-cover bg-center"
                     style={{
-                        backgroundImage: 'url(https://images.unsplash.com/photo-1584132967334-10e028bd69f7?q=80&w=1920&auto=format&fit=crop)', // Luxury sophisticated pool
+                        backgroundImage: 'url(https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=1920&auto=format&fit=crop)',
                     }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-primary-900/70 via-primary-900/50 to-primary-900/80" />
@@ -36,42 +60,26 @@ export default async function FacilitiesPage({ params }: PageProps) {
                         <div className="w-1.5 h-1.5 rotate-45 bg-accent-500" />
                         <div className="w-12 h-px bg-accent-500" />
                     </div>
-                    <p className="text-white/80 text-lg font-light max-w-2xl mx-auto tracking-wide">
-                        {{ ko: '최상의 휴식과 활력을 위한 공간', en: 'Spaces for ultimate relaxation and vitality', ja: '最高の休息と活力のための空間', zh: '极致休憩与活力空间' }[locale]}
-                    </p>
                 </div>
             </section>
 
             {/* Content Section */}
             <div className="container mx-auto px-6 py-20">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Fitness Center */}
-                    <div className="group relative h-96 rounded-lg overflow-hidden">
-                        <img
-                            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop"
-                            alt="Fitness"
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300" />
-                        <div className="absolute inset-x-0 bottom-0 p-8">
-                            <h3 className="text-2xl font-serif text-white mb-2">Fitness Center</h3>
-                            <p className="text-white/80 text-sm">Update Coming Soon</p>
+                    {facilities.map((facility, idx) => (
+                        <div key={idx} className="group relative h-96 rounded-lg overflow-hidden">
+                            <img
+                                src={facility.image}
+                                alt={facility.name[loc]}
+                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300" />
+                            <div className="absolute inset-x-0 bottom-0 p-8">
+                                <h3 className="text-2xl font-serif text-white mb-2">{facility.name[loc]}</h3>
+                                <p className="text-white/80 text-sm">{facility.desc[loc]}</p>
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Swimming Pool */}
-                    <div className="group relative h-96 rounded-lg overflow-hidden">
-                        <img
-                            src="https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?q=80&w=800&auto=format&fit=crop"
-                            alt="Pool"
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300" />
-                        <div className="absolute inset-x-0 bottom-0 p-8">
-                            <h3 className="text-2xl font-serif text-white mb-2">Swimming Pool</h3>
-                            <p className="text-white/80 text-sm">Update Coming Soon</p>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </div>
         </div>

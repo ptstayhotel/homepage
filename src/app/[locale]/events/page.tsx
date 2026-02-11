@@ -50,7 +50,7 @@ export default function EventsPage({ params }: EventsPageProps) {
     return (
         <div className="min-h-screen bg-neutral-50 pb-20">
             {/* Header Section */}
-            <section className="relative h-[65vh] min-h-[500px] flex items-end justify-center overflow-hidden bg-primary-900 pb-16">
+            <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden bg-primary-900">
                 <img
                     src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1920&auto=format&fit=crop"
                     alt="Events & Promotions"
@@ -66,9 +66,6 @@ export default function EventsPage({ params }: EventsPageProps) {
                         <div className="w-1.5 h-1.5 rotate-45 bg-accent-500" />
                         <div className="w-12 h-px bg-accent-500" />
                     </div>
-                    <p className="text-white/80 text-lg font-light max-w-2xl mx-auto tracking-wide">
-                        {{ ko: '특별한 순간을 위한 준비된 혜택을 확인하세요.', en: 'Discover exclusive benefits prepared for your special moments.', ja: '特別なひとときのためにご用意した特典をご覧ください。', zh: '发现为您特别时刻准备的专属优惠。' }[locale]}
-                    </p>
                 </div>
             </section>
 
