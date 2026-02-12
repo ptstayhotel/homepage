@@ -57,7 +57,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
   return (
     <>
       {/* Hero Section */}
-      <section className="pt-[180px] pb-16 bg-primary-900">
+      <section className="pt-[120px] md:pt-[180px] pb-10 md:pb-16 bg-primary-900">
         <div className="container-custom">
           {/* Breadcrumb */}
           <nav className="mb-8">
@@ -84,7 +84,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
             </ol>
           </nav>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12 items-center">
             {/* Image Gallery */}
             <RoomImageGallery images={room.images} roomName={roomName} />
 
@@ -195,7 +195,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
           <h2 className="text-2xl md:text-3xl font-heading font-semibold text-primary-900 mb-8">
             {t('amenities')}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {room.amenities.map((amenity) => (
               <div
                 key={amenity.id}
@@ -231,7 +231,7 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
           <h2 className="text-2xl md:text-3xl font-heading font-semibold text-primary-900 mb-8 text-center">
             {{ ko: '다른 객실 둘러보기', en: 'Explore Other Rooms', ja: '他の客室を見る', zh: '浏览其他客房' }[locale]}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             {rooms
               .filter((r) => r.id !== room.id)
               .slice(0, 3)

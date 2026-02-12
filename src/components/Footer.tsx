@@ -26,7 +26,7 @@ export default function Footer({ locale }: FooterProps) {
   return (
     <footer className="bg-primary-900 text-white">
       {/* Main Footer */}
-      <div className="container-custom py-16">
+      <div className="container-custom py-10 md:py-16">
         <div className="flex flex-col lg:flex-row items-start gap-12">
           {/* Left: Brand + Contact */}
           <div className="flex-shrink-0">

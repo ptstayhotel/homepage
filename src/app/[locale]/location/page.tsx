@@ -20,7 +20,7 @@ export default async function LocationPage({ params }: PageProps) {
     return (
         <div className="min-h-screen bg-white pb-20">
             {/* Header Section - Matches Rooms Page Style */}
-            <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden">
+            <section className="relative h-[50vh] md:h-[65vh] min-h-[350px] md:min-h-[500px] flex items-center justify-center overflow-hidden">
                 {/* Background */}
                 <div
                     className="absolute inset-0 bg-cover bg-center"
@@ -45,7 +45,7 @@ export default async function LocationPage({ params }: PageProps) {
 
             {/* Content Section */}
             <div className="container mx-auto px-6 py-20">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
                     {/* Info Column */}
                     <div>
                         <div className="mb-12">

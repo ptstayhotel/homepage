@@ -40,7 +40,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   return (
     <>
       {/* Page Header */}
-      <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[50vh] md:h-[65vh] min-h-[350px] md:min-h-[500px] flex items-center justify-center overflow-hidden">
         {/* Background */}
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -86,7 +86,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-neutral-200">
               {/* Check-in/out times */}
-              <div className="bg-white p-10 text-center">
+              <div className="bg-white p-6 md:p-8 lg:p-10 text-center">
                 <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center text-accent-500">
                   <svg
                     className="w-8 h-8"
@@ -111,7 +111,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               </div>
 
               {/* Payment info */}
-              <div className="bg-white p-10 text-center">
+              <div className="bg-white p-6 md:p-8 lg:p-10 text-center">
                 <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center text-accent-500">
                   <svg
                     className="w-8 h-8"
@@ -136,7 +136,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               </div>
 
               {/* Cancellation */}
-              <div className="bg-white p-10 text-center">
+              <div className="bg-white p-6 md:p-8 lg:p-10 text-center">
                 <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center text-accent-500">
                   <svg
                     className="w-8 h-8"

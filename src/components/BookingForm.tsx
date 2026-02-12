@@ -229,7 +229,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
       )}
 
       {/* Form content */}
-      <div className="p-8 md:p-12">
+      <div className="p-4 sm:p-6 md:p-8 lg:p-12">
         {/* Error message */}
         {error && (
           <div className="mb-8 p-4 border border-red-200 text-red-700 text-sm">
@@ -342,7 +342,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                 .map((room) => (
                   <label
                     key={room.id}
-                    className={`flex items-center gap-6 p-6 cursor-pointer transition-all duration-300 ${
+                    className={`flex items-center gap-3 p-3 sm:gap-4 sm:p-4 md:gap-6 md:p-6 cursor-pointer transition-all duration-300 ${
                       formData.roomId === room.id
                         ? 'bg-primary-900 text-white'
                         : 'bg-neutral-50 hover:bg-neutral-100'

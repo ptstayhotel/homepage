@@ -64,8 +64,8 @@ export default function BookingBar({ locale }: BookingBarProps) {
 
     return (
         <div className="w-full bg-[#111111] text-white border-b border-neutral-800">
-            <div className="max-w-7xl mx-auto px-6 md:px-8 py-8">
-                <div className="flex flex-col md:flex-row gap-8 items-end">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4 md:py-8">
+                <div className="flex flex-col md:flex-row gap-3 md:gap-8 items-end">
 
                     {/* Check-In */}
                     <div className="w-full md:flex-1 group">
@@ -124,7 +124,7 @@ export default function BookingBar({ locale }: BookingBarProps) {
                     {/* Submit Button */}
                     <button
                         onClick={handleBooking}
-                        className="w-full md:w-auto h-[54px] px-10 bg-white text-black font-body text-xs tracking-[0.3em] font-medium uppercase hover:bg-neutral-200 transition-all duration-300"
+                        className="w-full md:w-auto h-[54px] px-6 md:px-10 bg-white text-black font-body text-xs tracking-[0.3em] font-medium uppercase hover:bg-neutral-200 transition-all duration-300 mt-1 md:mt-0"
                     >
                         {buttonLabel[locale]}
                     </button>

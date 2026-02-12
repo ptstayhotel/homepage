@@ -23,7 +23,7 @@ export default async function BlogPage({ params }: PageProps) {
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             {/* Header Section */}
-            <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden bg-primary-900">
+            <section className="relative h-[50vh] md:h-[65vh] min-h-[350px] md:min-h-[500px] flex items-center justify-center overflow-hidden bg-primary-900">
                 <img
                     src="https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=1920&auto=format&fit=crop"
                     alt="Blog"

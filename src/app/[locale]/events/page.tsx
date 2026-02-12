@@ -50,7 +50,7 @@ export default function EventsPage({ params }: EventsPageProps) {
     return (
         <div className="min-h-screen bg-neutral-50 pb-20">
             {/* Header Section */}
-            <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden bg-primary-900">
+            <section className="relative h-[50vh] md:h-[65vh] min-h-[350px] md:min-h-[500px] flex items-center justify-center overflow-hidden bg-primary-900">
                 <img
                     src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1920&auto=format&fit=crop"
                     alt="Events & Promotions"
@@ -71,7 +71,7 @@ export default function EventsPage({ params }: EventsPageProps) {
 
             {/* Events List Section */}
             <div className="container mx-auto px-6 pt-16 relative z-20">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
                     {offers.map((offer) => (
                         <div
                             key={offer.id}
@@ -163,7 +163,7 @@ export default function EventsPage({ params }: EventsPageProps) {
                         </div>
 
                         {/* Body */}
-                        <div className="p-8">
+                        <div className="p-4 sm:p-6 md:p-8">
                             <p className="text-gray-600 text-sm leading-relaxed mb-6">
                                 {selectedOffer.desc[loc]}
                             </p>

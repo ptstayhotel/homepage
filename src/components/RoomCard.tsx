@@ -46,26 +46,26 @@ export default function RoomCard({ room, locale }: RoomCardProps) {
           />
 
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500" />
 
-          {/* Price Tag - Shows on hover */}
-          <div className="absolute bottom-6 left-6 right-6 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+          {/* Price Tag - Always visible on mobile, hover on desktop */}
+          <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 transform translate-y-0 opacity-100 md:translate-y-4 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 transition-all duration-500">
             <div className="flex items-baseline gap-2">
-              <span className="font-serif text-2xl text-white">{formatPrice(room.pricePerNight, locale)}</span>
+              <span className="font-serif text-xl sm:text-2xl text-white">{formatPrice(room.pricePerNight, locale)}</span>
               <span className="text-white/70 text-sm">~</span>
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 border border-neutral-100 border-t-0">
+        <div className="p-4 sm:p-6 border border-neutral-100 border-t-0">
           {/* Room Name */}
           <h3 className="font-serif text-xl text-primary-900 mb-3 tracking-wide group-hover:text-accent-500 transition-colors duration-300">
             {roomName}
           </h3>
 
           {/* Room Info */}
-          <div className="flex items-center gap-6 text-sm text-neutral-400 mb-4">
+          <div className="flex items-center gap-4 sm:gap-6 text-sm text-neutral-400 mb-4">
             <span className="flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

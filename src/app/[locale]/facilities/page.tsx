@@ -40,7 +40,7 @@ export default async function FacilitiesPage({ params }: PageProps) {
     return (
         <div className="min-h-screen bg-white pb-20">
             {/* Header Section */}
-            <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden">
+            <section className="relative h-[50vh] md:h-[65vh] min-h-[350px] md:min-h-[500px] flex items-center justify-center overflow-hidden">
                 {/* Background */}
                 <div
                     className="absolute inset-0 bg-cover bg-center"
@@ -67,14 +67,14 @@ export default async function FacilitiesPage({ params }: PageProps) {
             <div className="container mx-auto px-6 py-20">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {facilities.map((facility, idx) => (
-                        <div key={idx} className="group relative h-96 rounded-lg overflow-hidden">
+                        <div key={idx} className="group relative h-64 md:h-80 lg:h-96 rounded-lg overflow-hidden">
                             <img
                                 src={facility.image}
                                 alt={facility.name[loc]}
                                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                             />
                             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300" />
-                            <div className="absolute inset-x-0 bottom-0 p-8">
+                            <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 lg:p-8">
                                 <h3 className="text-2xl font-serif text-white mb-2">{facility.name[loc]}</h3>
                                 <p className="text-white/80 text-sm">{facility.desc[loc]}</p>
                             </div>

@@ -213,7 +213,7 @@ export default function Navigation({ locale }: NavigationProps) {
             <div className="lg:hidden flex justify-center py-3">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`p-2 transition-colors duration-300 ${logoColor}`}
+                className={`p-3 transition-colors duration-300 ${logoColor}`}
                 aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,7 +234,7 @@ export default function Navigation({ locale }: NavigationProps) {
       {/* Mobile Menu */}
       <div className={`lg:hidden fixed inset-0 z-40 bg-black transition-all duration-500 ${isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
         }`}>
-        <div className="container mx-auto px-6 pt-[140px] pb-8 h-full overflow-y-auto">
+        <div className="container mx-auto px-6 pt-[120px] pb-8 h-full overflow-y-auto">
           <div className="space-y-0">
             {menuItems.map((item) => (
               <Link

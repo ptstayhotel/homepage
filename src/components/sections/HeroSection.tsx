@@ -111,13 +111,13 @@ export default function HeroSection({ locale }: HeroSectionProps) {
       </div>
 
       {/* Content - Slightly above center */}
-      <div className="relative z-20 h-full flex items-start justify-center px-4 pt-[38vh]">
+      <div className="relative z-20 h-full flex items-start justify-center px-4 pt-[28vh] md:pt-[38vh]">
         <div className="text-center max-w-5xl">
           {/* Main Title */}
           <div className="overflow-hidden">
             <h1
               key={`title-${currentSlide}`}
-              className="text-white text-5xl md:text-6xl lg:text-7xl font-serif font-medium leading-tight animate-fadeInUp delay-200"
+              className="text-white text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-medium leading-tight animate-fadeInUp delay-200"
               style={{
                 textShadow: '0 4px 20px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3)',
                 animationDelay: '0.3s',
@@ -144,13 +144,13 @@ export default function HeroSection({ locale }: HeroSectionProps) {
       </div>
 
       {/* Scroll Down Indicator */}
-      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 opacity-70">
+      <div className="absolute bottom-16 md:bottom-24 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 opacity-70">
         <span className="text-white/60 text-[10px] tracking-[0.3em] uppercase">Scroll</span>
         <div className="w-px h-8 bg-white/40 animate-pulse" />
       </div>
 
       {/* Slide Indicators - Bottom center */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-30 flex gap-3">
+      <div className="absolute bottom-8 md:bottom-12 left-1/2 -translate-x-1/2 z-30 flex gap-3">
         {sliderImages.map((_, index) => (
           <button
             key={index}

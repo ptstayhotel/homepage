@@ -28,7 +28,7 @@ export default async function RoomsPage({ params }: RoomsPageProps) {
   return (
     <>
       {/* Page Header */}
-      <section className="relative h-[65vh] min-h-[500px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[50vh] md:h-[65vh] min-h-[350px] md:min-h-[500px] flex items-center justify-center overflow-hidden">
         {/* Background */}
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -62,7 +62,7 @@ export default async function RoomsPage({ params }: RoomsPageProps) {
           </div>
 
           {/* Rooms Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {rooms.map((room, index) => (
               <div
                 key={room.id}
@@ -77,10 +77,10 @@ export default async function RoomsPage({ params }: RoomsPageProps) {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 bg-primary-900 relative overflow-hidden">
+      <section className="py-16 md:py-24 lg:py-32 bg-primary-900 relative overflow-hidden">
         {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-64 h-64 border border-white/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 border border-white/5 rounded-full translate-x-1/3 translate-y-1/3" />
+        <div className="hidden md:block absolute top-0 left-0 w-64 h-64 border border-white/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
+        <div className="hidden md:block absolute bottom-0 right-0 w-96 h-96 border border-white/5 rounded-full translate-x-1/3 translate-y-1/3" />
 
         <div className="container-custom text-center relative z-10">
           <span className="inline-block text-xs font-medium text-accent-500 uppercase tracking-[0.3em] mb-6">
