@@ -25,6 +25,7 @@ interface HeroSectionProps {
 interface SlideData {
   type: 'video' | 'image';
   url: string;
+  mobileUrl: string;
   title: { ko: string; en: string; ja: string; zh: string };
   subtitle: { ko: string; en: string; ja: string; zh: string };
 }
@@ -34,18 +35,21 @@ const sliderImages: SlideData[] = [
   {
     type: 'image',
     url: '/images/rooms/party-suite/5.JPG',
+    mobileUrl: '/images/rooms/hero-mobile/party-suite.jpg',
     title: { ko: '도심 속 완벽한 휴식', en: 'Perfect Urban Retreat', ja: '都心の完璧な休息', zh: '城市中的完美休憩' },
     subtitle: { ko: '평택의 랜드마크, 스테이호텔에서 특별한 하루를', en: 'A Landmark in Pyeongtaek, Experience Luxury', ja: '平澤のランドマーク、ステイホテルで特別な一日を', zh: '平泽地标，在Stay Hotel度过特别的一天' },
   },
   {
     type: 'image',
     url: '/images/rooms/royal-suite/9.JPG',
+    mobileUrl: '/images/rooms/hero-mobile/royal-suite.jpg',
     title: { ko: '프리미엄 비즈니스 스테이', en: 'Premium Business Stay', ja: 'プレミアムビジネスステイ', zh: '高端商务住宿' },
     subtitle: { ko: '비즈니스와 휴식의 완벽한 조화', en: 'Where business meets comfort', ja: 'ビジネスと休息の完璧な調和', zh: '商务与舒适的完美融合' },
   },
   {
     type: 'image',
     url: '/images/rooms/deluxe/5.JPG',
+    mobileUrl: '/images/rooms/hero-mobile/deluxe.jpg',
     title: { ko: '특별한 순간을 위한 공간', en: 'Space for Special Moments', ja: '特別なひとときのための空間', zh: '为特别时刻打造的空间' },
     subtitle: { ko: '소중한 추억을 만들어 드립니다', en: 'Creating precious memories', ja: '大切な思い出をお作りします', zh: '为您创造珍贵的回忆' },
   },
@@ -53,6 +57,15 @@ const sliderImages: SlideData[] = [
 
 export default function HeroSection({ locale }: HeroSectionProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Auto-play slider
   useEffect(() => {
@@ -91,7 +104,7 @@ export default function HeroSection({ locale }: HeroSectionProps) {
               </video>
             ) : (
               <Image
-                src={slide.url}
+                src={isMobile ? slide.mobileUrl : slide.url}
                 alt={slide.title.en}
                 fill
                 className={`object-cover ${index === currentSlide ? 'animate-kenburns' : ''}`}
