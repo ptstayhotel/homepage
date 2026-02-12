@@ -83,7 +83,7 @@ export default function EventsPage({ params }: EventsPageProps) {
                                 <img
                                     src={offer.image}
                                     alt={offer.title[loc]}
-                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    className={`w-full h-full object-cover transition-transform duration-700 ${offer.id === 5 ? 'scale-[1.35] group-hover:scale-150' : 'group-hover:scale-110'}`}
                                 />
                                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 text-xs font-medium text-gray-600 rounded-full uppercase tracking-wider">
                                     {offer.type}
@@ -149,7 +149,7 @@ export default function EventsPage({ params }: EventsPageProps) {
                             <img
                                 src={selectedOffer.image}
                                 alt={selectedOffer.title[loc]}
-                                className="w-full h-full object-cover"
+                                className={`w-full h-full object-cover ${selectedOffer.id === 5 ? 'scale-[1.35]' : ''}`}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                             <div className="absolute bottom-0 left-0 right-0 p-8">
