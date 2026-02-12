@@ -210,10 +210,10 @@ export default function Navigation({ locale }: NavigationProps) {
             </nav>
 
             {/* Mobile Menu Button */}
-            <div className="lg:hidden flex justify-center py-3">
+            <div className="lg:hidden flex justify-end py-3">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`p-3 transition-colors duration-300 ${logoColor}`}
+                className={`ml-auto p-3 transition-colors duration-300 ${logoColor}`}
                 aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

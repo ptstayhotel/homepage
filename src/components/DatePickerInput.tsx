@@ -98,6 +98,20 @@ export default function DatePickerInput({
 
   const isDark = theme === 'dark';
 
+  // Two-line display for BookingBar (dark theme): year on top, month.day below
+  const renderDarkDisplay = () => {
+    if (!selectedDate) return <span className="text-neutral-600">{placeholder}</span>;
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    return (
+      <>
+        <span className="block text-[10px] tracking-[0.2em] text-neutral-500">{year}</span>
+        <span className="block text-lg font-normal tracking-wider">{month}.{day}</span>
+      </>
+    );
+  };
+
   return (
     <div ref={containerRef} className="relative">
       {/* Trigger button */}
@@ -106,11 +120,11 @@ export default function DatePickerInput({
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full text-left border-b py-3 transition-all cursor-pointer ${
           isDark
-            ? 'bg-transparent border-neutral-700 text-white font-body text-lg font-normal tracking-wider hover:border-neutral-400 focus:outline-none focus:border-white'
+            ? 'bg-transparent border-neutral-700 text-white font-body hover:border-neutral-400 focus:outline-none focus:border-white'
             : 'bg-transparent border-neutral-300 text-neutral-900 font-body text-[0.95rem] font-light tracking-wide hover:border-neutral-500 focus:outline-none focus:border-primary-900'
-        } ${!value && isDark ? 'text-neutral-600' : ''} ${!value && !isDark ? 'text-neutral-400' : ''}`}
+        } ${!value && !isDark ? 'text-neutral-400' : ''}`}
       >
-        {displayValue}
+        {isDark ? renderDarkDisplay() : displayValue}
       </button>
 
       {/* Calendar popup */}

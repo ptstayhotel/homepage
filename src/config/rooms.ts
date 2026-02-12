@@ -23,8 +23,6 @@ export const commonAmenities: RoomAmenity[] = [
 
 export const premiumAmenities: RoomAmenity[] = [
   ...commonAmenities,
-  { id: 'bathtub', nameKo: '욕조', nameEn: 'Bathtub', icon: 'bath' },
-  { id: 'coffee', nameKo: '커피 머신', nameEn: 'Coffee Machine', icon: 'coffee' },
   { id: 'minibar', nameKo: '미니바', nameEn: 'Mini Bar', icon: 'wine' },
 ];
 
@@ -131,13 +129,14 @@ export const rooms: Room[] = [
     pricePerNight: 90000,
     fridayPrice: 100000,
     saturdayPrice: 110000,
-    maxGuests: 4,
+    baseGuests: 2,
+    maxGuests: 3,
     size: 32,
     bedType: 'twin',
     viewType: 'garden',
     amenities: [
       ...premiumAmenities,
-      { id: 'extra-bed', nameKo: '추가 침구', nameEn: 'Extra Bedding', icon: 'bed' },
+
     ],
     images: [
       { url: '/images/rooms/family-twin/5.JPG', alt: 'Family Twin Room', isPrimary: true },
@@ -160,14 +159,14 @@ export const rooms: Room[] = [
     pricePerNight: 110000,
     fridayPrice: 130000,
     saturdayPrice: 150000,
-    maxGuests: 5,
+    baseGuests: 3,
+    maxGuests: 4,
     size: 38,
     bedType: 'twin',
     viewType: 'garden',
     amenities: [
       ...premiumAmenities,
-      { id: 'extra-bed', nameKo: '추가 침구', nameEn: 'Extra Bedding', icon: 'bed' },
-      { id: 'dressing', nameKo: '드레스룸', nameEn: 'Dressing Room', icon: 'wardrobe' },
+
     ],
     images: [
       { url: '/images/rooms/family-triple/5.JPG', alt: 'Family Triple Room', isPrimary: true },
@@ -217,7 +216,8 @@ export const rooms: Room[] = [
     pricePerNight: 160000,
     fridayPrice: 180000,
     saturdayPrice: 200000,
-    maxGuests: 6,
+    baseGuests: 4,
+    maxGuests: 4,
     size: 60,
     bedType: 'king',
     viewType: 'city',

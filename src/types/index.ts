@@ -30,6 +30,7 @@ export interface Room {
   pricePerNight: number; // in KRW (Sun-Thu)
   fridayPrice: number; // in KRW (Friday)
   saturdayPrice: number; // in KRW (Saturday)
+  baseGuests?: number;
   maxGuests: number;
   size: number; // in square meters
   amenities: RoomAmenity[];

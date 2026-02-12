@@ -378,7 +378,9 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                       <p className={`text-sm mt-1 ${
                         formData.roomId === room.id ? 'text-white/70' : 'text-neutral-500'
                       }`}>
-                        {room.maxGuests} {{ ko: '인', en: 'guests', ja: '名', zh: '位' }[locale]} · {room.size}m²
+                        {room.baseGuests
+                          ? `${room.baseGuests}~${room.maxGuests}`
+                          : room.maxGuests} {{ ko: '인', en: ' guests', ja: '名', zh: '位' }[locale]} · {room.size}m²
                       </p>
                     </div>
                     <div className="text-right">

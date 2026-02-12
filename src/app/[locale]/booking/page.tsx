@@ -106,7 +106,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   {{ ko: '체크인/아웃', en: 'Check-in/out', ja: 'チェックイン/アウト', zh: '入住/退房' }[locale]}
                 </h3>
                 <p className="text-neutral-500 text-sm leading-relaxed">
-                  {{ ko: '체크인 15:00 / 체크아웃 11:00', en: 'Check-in 3:00 PM / Check-out 11:00 AM', ja: 'チェックイン 15:00 / チェックアウト 11:00', zh: '入住 15:00 / 退房 11:00' }[locale]}
+                  {{ ko: '체크인 15:00 / 체크아웃 12:00', en: 'Check-in 3:00 PM / Check-out 12:00 PM', ja: 'チェックイン 15:00 / チェックアウト 12:00', zh: '入住 15:00 / 退房 12:00' }[locale]}
                 </p>
               </div>
 

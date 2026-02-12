@@ -136,7 +136,15 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
                     {t('maxGuests')}
                   </span>
                   <span className="text-white font-medium">
-                    {room.maxGuests} {tCommon('guests')}
+                    {room.baseGuests ? (
+                      <>
+                        {{ ko: `기준 ${room.baseGuests}인`, en: `Base ${room.baseGuests}`, ja: `基準 ${room.baseGuests}名`, zh: `基准 ${room.baseGuests}位` }[locale]}
+                        {' / '}
+                        {{ ko: `최대 ${room.maxGuests}인`, en: `Max ${room.maxGuests}`, ja: `最大 ${room.maxGuests}名`, zh: `最多 ${room.maxGuests}位` }[locale]}
+                      </>
+                    ) : (
+                      <>{room.maxGuests} {tCommon('guests')}</>
+                    )}
                   </span>
                 </div>
                 <div className="bg-white/5 rounded-lg p-4">
@@ -153,14 +161,6 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
                     {t('bedType')}
                   </span>
                   <span className="text-white font-medium">{tBed(room.bedType)}</span>
-                </div>
-                <div className="bg-white/5 rounded-lg p-4">
-                  <span className="text-neutral-400 text-sm block mb-1">
-                    {t('viewType')}
-                  </span>
-                  <span className="text-white font-medium">
-                    {room.viewType ? tView(room.viewType) : '-'}
-                  </span>
                 </div>
               </div>
 
@@ -245,7 +245,9 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
                     {getRoomName(otherRoom, locale as Locale)}
                   </h3>
                   <p className="text-neutral-500 text-sm mb-4">
-                    {otherRoom.maxGuests} {tCommon('guests')} · {otherRoom.size}
+                    {otherRoom.baseGuests
+                      ? `${otherRoom.baseGuests}~${otherRoom.maxGuests}`
+                      : otherRoom.maxGuests} {tCommon('guests')} · {otherRoom.size}
                     {tCommon('sqm')}
                   </p>
                   <span className="text-accent-600 font-semibold">

@@ -69,7 +69,7 @@ function HotelJsonLd({ locale }: { locale: string }) {
       longitude: 127.0857,
     },
     checkinTime: '15:00',
-    checkoutTime: '11:00',
+    checkoutTime: '12:00',
     currenciesAccepted: 'KRW',
     paymentAccepted: 'Cash, Credit Card',
     priceRange: '₩₩',
