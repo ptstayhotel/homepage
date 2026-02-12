@@ -49,7 +49,6 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
   const t = createTranslator(locale, 'rooms');
   const tCommon = createTranslator(locale, 'common');
   const tBed = createTranslator(locale, 'bedTypes');
-  const tView = createTranslator(locale, 'viewTypes');
 
   const roomName = getRoomName(room, locale as Locale);
   const description = getRoomDescription(room, locale as Locale);
