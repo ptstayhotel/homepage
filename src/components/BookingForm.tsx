@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from '@/lib/translations';
-import { Locale, BookingFormData, ReservationType } from '@/types';
+import { Locale, BookingFormData, ReservationType, TransportationType } from '@/types';
 import { rooms, getRoomName, formatPrice, calculateRoomTotal } from '@/config/rooms';
 import DatePickerInput from './DatePickerInput';
 import DropdownSelect from './DropdownSelect';
@@ -33,6 +33,11 @@ const reservationTypeOptions: { value: ReservationType; label: Record<Locale, st
   { value: 'military', label: { ko: '군인', en: 'Military', ja: '軍人', zh: '军人' } },
 ];
 
+const transportationOptions: { value: TransportationType; label: Record<Locale, string> }[] = [
+  { value: 'walk', label: { ko: '도보', en: 'Walk', ja: '徒歩', zh: '步行' } },
+  { value: 'car', label: { ko: '차량', en: 'Car', ja: '車', zh: '车辆' } },
+];
+
 export default function BookingForm({ locale, preselectedRoomId, initialCheckIn, initialCheckOut, initialGuestCount, initialReservationType, initialStep }: BookingFormProps) {
   const t = useTranslations('booking');
   const tErrors = useTranslations('errors');
@@ -51,6 +56,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
     checkOut: initialCheckOut || getTomorrowString(),
     guestCount: initialGuestCount || 2,
     reservationType: initialReservationType || 'general',
+    transportation: 'walk',
     guestName: '',
     guestEmail: '',
     guestPhone: '',
@@ -323,6 +329,25 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <label className="form-label">{t('transportationMethod')} *</label>
+                <DropdownSelect
+                  value={formData.transportation}
+                  onChange={(val) => {
+                    setFormData(prev => ({ ...prev, transportation: val as TransportationType }));
+                    setError('');
+                  }}
+                  options={transportationOptions.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label[locale],
+                  }))}
+                  theme="light"
+                />
+              </div>
+              <div />
+            </div>
           </div>
         )}
 
@@ -505,6 +530,12 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                 </span>
               </div>
               <div className="flex justify-between p-4">
+                <span className="text-neutral-500 text-sm">{t('transportationMethod')}</span>
+                <span className="font-medium text-primary-900">
+                  {transportationOptions.find(o => o.value === formData.transportation)?.label[locale]}
+                </span>
+              </div>
+              <div className="flex justify-between p-4">
                 <span className="text-neutral-500 text-sm">{t('guestName')}</span>
                 <span className="font-medium text-primary-900">{formData.guestName}</span>
               </div>
@@ -590,6 +621,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                     checkOut: getTomorrowString(),
                     guestCount: 2,
                     reservationType: 'general',
+                    transportation: 'walk',
                     guestName: '',
                     guestEmail: '',
                     guestPhone: '',

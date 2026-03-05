@@ -128,6 +128,7 @@ export async function GET(request: NextRequest) {
       <div class="row"><span class="label">객실</span><span class="value">${roomName}</span></div>
       <div class="row"><span class="label">체크인</span><span class="value">${data.checkIn}</span></div>
       <div class="row"><span class="label">체크아웃</span><span class="value">${data.checkOut} (${nights}박)</span></div>
+      <div class="row"><span class="label">방문 방법</span><span class="value">${data.transportation === 'car' ? '차량' : '도보'}</span></div>
       <div class="row"><span class="label">예상 금액</span><span class="value" style="color: #d4af37;">${priceText}</span></div>
     </div>`;
 

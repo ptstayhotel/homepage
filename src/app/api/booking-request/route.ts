@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
       !body.checkOut ||
       !body.guestName ||
       !body.guestEmail ||
-      !body.guestPhone
+      !body.guestPhone ||
+      !body.transportation
     ) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },

@@ -48,6 +48,7 @@ export type ViewType = 'city' | 'garden' | 'pool' | 'mountain' | 'ocean';
 // ============================================
 
 export type ReservationType = 'general' | 'corporate' | 'military';
+export type TransportationType = 'walk' | 'car';
 
 export interface BookingFormData {
   roomId: string;
@@ -55,6 +56,7 @@ export interface BookingFormData {
   checkOut: string; // ISO date string
   guestCount: number;
   reservationType: ReservationType;
+  transportation: TransportationType;
   guestName: string;
   guestEmail: string;
   guestPhone: string;

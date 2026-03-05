@@ -30,6 +30,11 @@ const RESERVATION_TYPE_LABELS: Record<string, Record<string, string>> = {
   military: { ko: '군인', en: 'Military' },
 };
 
+const TRANSPORTATION_LABELS: Record<string, Record<string, string>> = {
+  walk: { ko: '도보', en: 'Walk' },
+  car: { ko: '차량', en: 'Car' },
+};
+
 // Shared font stack for all email templates
 const FONT_STACK = "'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', Arial, sans-serif";
 
@@ -93,7 +98,9 @@ function getBookingDetails(data: BookingFormData) {
   const priceText = room ? formatPrice(totalPrice, 'ko') : '-';
   const typeLabel = RESERVATION_TYPE_LABELS[data.reservationType]?.ko || data.reservationType;
   const typeLabelEn = RESERVATION_TYPE_LABELS[data.reservationType]?.en || data.reservationType;
-  return { room, roomName, roomNameEn, nights, totalPrice, priceText, typeLabel, typeLabelEn };
+  const transportLabel = TRANSPORTATION_LABELS[data.transportation]?.ko || data.transportation || '도보';
+  const transportLabelEn = TRANSPORTATION_LABELS[data.transportation]?.en || data.transportation || 'Walk';
+  return { room, roomName, roomNameEn, nights, totalPrice, priceText, typeLabel, typeLabelEn, transportLabel, transportLabelEn };
 }
 
 /**
@@ -107,7 +114,7 @@ export async function sendBookingEmail(
   const brand = getBrandConfig();
   const hotelEmail = brand.contact.email;
   const brandName = brand.name.ko;
-  const { roomName, roomNameEn, nights, priceText, typeLabel } = getBookingDetails(data);
+  const { roomName, roomNameEn, nights, priceText, typeLabel, transportLabel } = getBookingDetails(data);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'http://localhost:3000';
   const confirmUrl = `${siteUrl}/api/booking-confirm?token=${confirmToken}`;
@@ -156,6 +163,10 @@ export async function sendBookingEmail(
           <tr>
             <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">예약 유형</td>
             <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${typeLabel}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">방문 방법</td>
+            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${transportLabel}</td>
           </tr>
           <tr>
             <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">예상 금액</td>
@@ -242,7 +253,7 @@ export async function sendConfirmationEmail(
   const hotelEmail = brand.contact.email;
   const hotelPhone = brand.contact.phone;
   const brandName = brand.name.ko;
-  const { roomName, roomNameEn, nights, priceText, typeLabel, typeLabelEn } = getBookingDetails(data);
+  const { roomName, roomNameEn, nights, priceText, typeLabel, typeLabelEn, transportLabel, transportLabelEn } = getBookingDetails(data);
   const fromEmail = process.env.EMAIL_FROM || 'noreply@pyeongtaekstay.com';
   const confirmedDate = new Date().toISOString().split('T')[0];
 
@@ -349,6 +360,10 @@ export async function sendConfirmationEmail(
           <tr>
             <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">예약유형 / Type</td>
             <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${typeLabel} / ${typeLabelEn}</td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">방문 방법 / Transport</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${transportLabel} / ${transportLabelEn}</td>
           </tr>
         </table>
       </td></tr>
