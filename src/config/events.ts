@@ -58,7 +58,7 @@ export const offers: Offer[] = [
     {
         id: 2,
         type: 'event',
-        image: '/images/events/booking-benefits.jpg',
+        image: '/images/events/booking-benefits.png',
         title: { ko: '홈페이지 예약 특전', en: 'Online Booking Benefits', ja: 'ホームページ予約特典', zh: '官网预订专享' },
         subtitle: { ko: '모든 예약자 공용 혜택', en: 'Benefits for All Guests', ja: '全予約者共通特典', zh: '所有预订者共享优惠' },
         desc: { ko: '라운지 무료 이용 · 회의실 대관 할인 · 라운지 커피&홍차 무료', en: 'Free lounge access · Meeting room discount · Complimentary coffee & tea at lounge', ja: 'ラウンジ無料利用 · 会議室割引 · ラウンジでコーヒー＆紅茶無料', zh: '免费使用休息室 · 会议室折扣 · 休息室免费咖啡和红茶' },
@@ -101,7 +101,7 @@ export const offers: Offer[] = [
     {
         id: 4,
         type: 'event',
-        image: '/images/events/military-special.jpg',
+        image: '/images/events/military-special.png',
         title: { ko: '밀리터리 스페셜', en: 'Military Special', ja: 'ミリタリースペシャル', zh: '军人特惠' },
         subtitle: { ko: 'US Military 전용 혜택', en: 'Exclusive for US Military', ja: '米軍専用特典', zh: '美军专属优惠' },
         desc: { ko: '미군 ID카드 제시 시 특별 할인 & 선물 제공 · 자세한 내용은 문의', en: 'Special discount & gift with US Military ID · Contact us for details', ja: '米軍ID提示で特別割引＆ギフト · 詳細はお問い合わせ', zh: '出示美军ID享特别折扣及礼物 · 详情请咨询' },
@@ -148,7 +148,7 @@ export const offers: Offer[] = [
     {
         id: 5,
         type: 'event',
-        image: '/images/events/corporate-benefits.jpg',
+        image: '/images/events/corporate-benefits.png',
         title: { ko: '기업체 특별 혜택', en: 'Corporate Benefits', ja: '法人特別特典', zh: '企业专属优惠' },
         subtitle: { ko: '기업 고객 맞춤 할인', en: 'Tailored Corporate Rates', ja: '法人向けカスタム割引', zh: '企业定制优惠' },
         desc: { ko: '기업 고객 대상 할인 및 우대 서비스 · 문의를 통해 맞춤 견적 제공', en: 'Custom rates & premium services for corporate clients · Contact us for a quote', ja: '法人顧客向け割引＆優待 · お問い合わせで見積もり提供', zh: '企业客户折扣及优质服务 · 联系我们获取报价' },
