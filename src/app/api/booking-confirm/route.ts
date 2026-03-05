@@ -99,9 +99,14 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Step 2: Send HTML receipt email to guest ──
-  sendConfirmationEmail(booking.formData, booking.bookingId).catch((err) => {
-    console.error('Guest confirmation email failed:', err);
-  });
+  // MUST await — Cloudflare kills the isolate when the response is sent.
+  const emailResult = await sendConfirmationEmail(booking.formData, booking.bookingId);
+
+  if (!emailResult.success) {
+    console.error(`[booking-confirm] Email to guest failed for ${booking.bookingId}: ${emailResult.error}`);
+  } else {
+    console.log(`[booking-confirm] Confirmation email sent for ${booking.bookingId}`);
+  }
 
   // ── Step 3: Show confirmation page to admin ──
   const data = booking.formData;

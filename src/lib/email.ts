@@ -44,11 +44,19 @@ async function sendEmail(options: {
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn('[Email] RESEND_API_KEY not configured. Skipping email send.');
-    console.log(`[Email] Would have sent to: ${options.to}`);
-    console.log(`[Email] Subject: ${options.subject}`);
-    return;
+    console.error('[Email] CRITICAL: RESEND_API_KEY is not configured.');
+    console.error(`[Email] To: ${options.to} | Subject: ${options.subject}`);
+    throw new Error('RESEND_API_KEY environment variable is not set');
   }
+
+  console.log(`[Email] Sending to: ${options.to} | Subject: ${options.subject}`);
+
+  const payload = {
+    from: options.from,
+    to: [options.to],
+    subject: options.subject,
+    html: options.html,
+  };
 
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -56,18 +64,19 @@ async function sendEmail(options: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      from: options.from,
-      to: [options.to],
-      subject: options.subject,
-      html: options.html,
-    }),
+    body: JSON.stringify(payload),
   });
 
+  const responseBody = await response.text();
+
   if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Email send failed: ${response.status} - ${errorBody}`);
+    console.error(`[Email] Resend API error: ${response.status} ${response.statusText}`);
+    console.error(`[Email] Response body: ${responseBody}`);
+    console.error(`[Email] Payload from: ${payload.from} | to: ${payload.to}`);
+    throw new Error(`Resend API ${response.status}: ${responseBody}`);
   }
+
+  console.log(`[Email] Success: ${response.status} | Response: ${responseBody}`);
 }
 
 function calculateNights(checkIn: string, checkOut: string): number {

@@ -39,18 +39,31 @@ export async function POST(request: NextRequest) {
     // Save booking as pending
     const booking = saveBooking(body, bookingId);
 
-    // Send notification to hotel only (with confirm button)
-    sendBookingEmail(body, bookingId, booking.token).catch((err) => {
-      console.error('Background email send failed:', err);
-    });
+    // Send notification to hotel — MUST await before returning response.
+    // Cloudflare Edge kills the V8 isolate the moment the response is sent.
+    const emailResult = await sendBookingEmail(body, bookingId, booking.token);
 
+    if (!emailResult.success) {
+      console.error(`[booking-request] Email failed for ${bookingId}: ${emailResult.error}`);
+      // Booking is saved but email failed — return 500 so client knows
+      return NextResponse.json(
+        {
+          success: false,
+          bookingId,
+          error: `Booking saved but email notification failed: ${emailResult.error}`,
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log(`[booking-request] Success: ${bookingId}, email sent to hotel`);
     return NextResponse.json({
       success: true,
       bookingId,
       message: 'Booking request sent successfully',
     });
   } catch (error) {
-    console.error('Booking Error:', error);
+    console.error('[booking-request] Unhandled error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create booking' },
       { status: 500 }
