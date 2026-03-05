@@ -111,7 +111,7 @@ export async function sendBookingEmail(
 
   const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   const confirmUrl = `${siteUrl}/api/booking-confirm?token=${confirmToken}`;
-  const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const fromEmail = process.env.EMAIL_FROM || 'noreply@pyeongtaekstay.com';
 
   const hotelHtml = `<!DOCTYPE html>
 <html lang="ko">
@@ -242,7 +242,7 @@ export async function sendConfirmationEmail(
   const hotelPhone = brand.contact.phone;
   const brandName = brand.name.ko;
   const { roomName, roomNameEn, nights, priceText, typeLabel, typeLabelEn } = getBookingDetails(data);
-  const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const fromEmail = process.env.EMAIL_FROM || 'noreply@pyeongtaekstay.com';
   const confirmedDate = new Date().toISOString().split('T')[0];
 
   const guestHtml = `<!DOCTYPE html>

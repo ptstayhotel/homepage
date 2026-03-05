@@ -54,7 +54,7 @@ function HotelJsonLd({ locale }: { locale: string }) {
     description: locale === 'ko'
       ? '평택역 도보 2분, 프리미엄 부띠크 호텔'
       : '2 min walk from Pyeongtaek Station, Premium Boutique Hotel',
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.stayhotel.kr',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://pyeongtaekstay.com',
     telephone: '031-654-3333',
     email: 'ptstayhotel@gmail.com',
     address: {

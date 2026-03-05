@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.stayhotel.kr';
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pyeongtaekstay.com';
 const locales = ['ko', 'en', 'ja', 'zh'];
 
 const roomSlugs = [

@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   icons: {
     icon: '/icon.png',
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.stayhotel.kr'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://pyeongtaekstay.com'),
 };
 
 export default function RootLayout({
