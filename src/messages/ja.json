@@ -112,6 +112,7 @@
     "transportationMethod": "交通手段",
     "transportationWalk": "徒歩",
     "transportationCar": "車",
+    "weekendRateApplied": "（週末料金適用）",
     "confirmBooking": "予約する",
     "totalPrice": "合計金額",
     "nightsStay": "{nights}泊",

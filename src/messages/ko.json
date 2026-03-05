@@ -112,6 +112,7 @@
     "transportationMethod": "방문 방법",
     "transportationWalk": "도보",
     "transportationCar": "차량",
+    "weekendRateApplied": "(주말 요금 적용)",
     "confirmBooking": "예약하기",
     "totalPrice": "총 금액",
     "nightsStay": "{nights}박",

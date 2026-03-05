@@ -77,6 +77,18 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
   const nights = calculateNights(formData.checkIn, formData.checkOut);
   const totalPrice = selectedRoom ? calculateRoomTotal(selectedRoom, formData.checkIn, formData.checkOut) : 0;
 
+  // Check if selected dates include Friday or Saturday (weekend surcharge)
+  const includesWeekend = (() => {
+    const current = new Date(formData.checkIn + 'T00:00:00');
+    const end = new Date(formData.checkOut + 'T00:00:00');
+    while (current < end) {
+      const day = current.getDay();
+      if (day === 5 || day === 6) return true;
+      current.setDate(current.getDate() + 1);
+    }
+    return false;
+  })();
+
   // Handle form field changes
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -412,13 +424,20 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                       <span className={`font-serif text-xl ${
                         formData.roomId === room.id ? 'text-accent-500' : 'text-primary-900'
                       }`}>
-                        {formatPrice(room.pricePerNight, locale)}~
+                        {formatPrice(calculateRoomTotal(room, formData.checkIn, formData.checkOut), locale)}
                       </span>
                       <span className={`text-sm block ${
                         formData.roomId === room.id ? 'text-white/70' : 'text-neutral-500'
                       }`}>
-                        {{ ko: '/박', en: '/night', ja: '/泊', zh: '/晚' }[locale]}
+                        {nights}{{ ko: '박 합계', en: ' night total', ja: '泊 合計', zh: '晚 总计' }[locale]}
                       </span>
+                      {includesWeekend && (
+                        <span className={`text-xs block mt-1 ${
+                          formData.roomId === room.id ? 'text-amber-300' : 'text-amber-600'
+                        }`}>
+                          {t('weekendRateApplied')}
+                        </span>
+                      )}
                     </div>
                   </label>
                 ))}

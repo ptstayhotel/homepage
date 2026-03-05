@@ -112,6 +112,7 @@
     "transportationMethod": "交通方式",
     "transportationWalk": "步行",
     "transportationCar": "车辆",
+    "weekendRateApplied": "（含周末价格）",
     "confirmBooking": "提交预订",
     "totalPrice": "总价",
     "nightsStay": "{nights}晚",

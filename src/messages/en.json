@@ -112,6 +112,7 @@
     "transportationMethod": "Transportation",
     "transportationWalk": "Walk",
     "transportationCar": "Car",
+    "weekendRateApplied": "(Weekend Rate Applied)",
     "confirmBooking": "Request Booking",
     "totalPrice": "Total Price",
     "nightsStay": "{nights} nights",
