@@ -1,22 +1,28 @@
 /**
  * Email Utility for Booking Notifications - Edge Runtime Compatible
  *
- * Uses Resend API (fetch-based) instead of nodemailer.
+ * Uses Resend API (fetch-based). No PDF dependencies.
  *
  * Two-phase booking flow:
  * 1. sendBookingEmail() - Hotel gets notification with "Confirm" button
- * 2. sendConfirmationEmail() - Guest gets confirmation + PDF after hotel confirms
+ * 2. sendConfirmationEmail() - Guest gets professional HTML receipt after hotel confirms
+ *
+ * HTML Email Design:
+ * - Table-based layout for cross-client compatibility (Gmail, Outlook, Apple Mail)
+ * - Strict inline CSS only (Gmail strips <style> tags)
+ * - Max width 600px (universal email client standard)
+ * - No flexbox, grid, or media queries (Outlook uses Word rendering engine)
+ * - System font stack for Korean/English support
  *
  * Required environment variables:
  * - RESEND_API_KEY: Resend API key (re_xxxx)
- * - EMAIL_FROM: Verified sender email (e.g., booking@yourdomain.com)
+ * - EMAIL_FROM: Verified sender email
  * - SITE_URL: Site base URL (for confirm button link)
  */
 
 import { BookingFormData } from '@/types';
 import { getRoomById, getRoomName, formatPrice, calculateRoomTotal } from '@/config/rooms';
 import { getBrandConfig } from '@/config/brand';
-import { generateBookingPDF } from './booking-pdf';
 
 const RESERVATION_TYPE_LABELS: Record<string, Record<string, string>> = {
   general: { ko: '일반', en: 'General' },
@@ -24,16 +30,8 @@ const RESERVATION_TYPE_LABELS: Record<string, Record<string, string>> = {
   military: { ko: '군인', en: 'Military' },
 };
 
-/**
- * Edge-compatible base64 encoding (Buffer 대체)
- */
-function uint8ArrayToBase64(bytes: Uint8Array): string {
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
+// Shared font stack for all email templates
+const FONT_STACK = "'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', Arial, sans-serif";
 
 /**
  * fetch 기반 이메일 전송 (Resend API)
@@ -43,11 +41,6 @@ async function sendEmail(options: {
   from: string;
   subject: string;
   html: string;
-  attachments?: Array<{
-    filename: string;
-    content: string; // base64 encoded
-    content_type: string;
-  }>;
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -68,7 +61,6 @@ async function sendEmail(options: {
       to: [options.to],
       subject: options.subject,
       html: options.html,
-      attachments: options.attachments,
     }),
   });
 
@@ -91,7 +83,8 @@ function getBookingDetails(data: BookingFormData) {
   const totalPrice = room ? calculateRoomTotal(room, data.checkIn, data.checkOut) : 0;
   const priceText = room ? formatPrice(totalPrice, 'ko') : '-';
   const typeLabel = RESERVATION_TYPE_LABELS[data.reservationType]?.ko || data.reservationType;
-  return { room, roomName, roomNameEn, nights, totalPrice, priceText, typeLabel };
+  const typeLabelEn = RESERVATION_TYPE_LABELS[data.reservationType]?.en || data.reservationType;
+  return { room, roomName, roomNameEn, nights, totalPrice, priceText, typeLabel, typeLabelEn };
 }
 
 /**
@@ -111,72 +104,96 @@ export async function sendBookingEmail(
   const confirmUrl = `${siteUrl}/api/booking-confirm?token=${confirmToken}`;
   const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
-  const hotelHtml = `
-<div style="font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a2e;">
-  <div style="background: #1a1a2e; padding: 24px 32px;">
-    <h1 style="color: #d4af37; font-size: 18px; margin: 0; letter-spacing: 2px;">${brandName}</h1>
-  </div>
-  <div style="padding: 32px; border: 1px solid #e5e5e5; border-top: none;">
-    <h2 style="font-size: 20px; margin: 0 0 24px 0; color: #1a1a2e;">새 예약 접수</h2>
-    <p style="font-size: 13px; color: #888; margin: 0 0 16px 0;">예약번호: <strong style="color: #1a1a2e;">${bookingId}</strong></p>
-
-    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px 0; color: #888; width: 120px;">객실</td>
-        <td style="padding: 12px 0; font-weight: 600;">${roomName} (${roomNameEn})</td>
-      </tr>
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px 0; color: #888;">체크인</td>
-        <td style="padding: 12px 0; font-weight: 600;">${data.checkIn}</td>
-      </tr>
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px 0; color: #888;">체크아웃</td>
-        <td style="padding: 12px 0; font-weight: 600;">${data.checkOut} (${nights}박)</td>
-      </tr>
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px 0; color: #888;">인원</td>
-        <td style="padding: 12px 0; font-weight: 600;">${data.guestCount}명</td>
-      </tr>
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px 0; color: #888;">예약 유형</td>
-        <td style="padding: 12px 0; font-weight: 600;">${typeLabel}</td>
-      </tr>
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px 0; color: #888;">예상 금액</td>
-        <td style="padding: 12px 0; font-weight: 600; color: #d4af37;">${priceText}</td>
-      </tr>
+  const hotelHtml = `<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f5;">
+  <tr><td align="center" style="padding: 24px 16px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; width: 100%; background-color: #ffffff;">
+      <!-- Header -->
+      <tr><td style="background-color: #1a1a2e; padding: 24px 32px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td style="color: #d4af37; font-family: ${FONT_STACK}; font-size: 18px; font-weight: 700; letter-spacing: 2px;">${brandName}</td>
+          </tr>
+        </table>
+      </td></tr>
+      <!-- Body -->
+      <tr><td style="padding: 32px; border: 1px solid #e5e5e5; border-top: none;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td style="font-family: ${FONT_STACK}; font-size: 20px; font-weight: 700; color: #1a1a2e; padding-bottom: 24px;">새 예약 접수</td></tr>
+          <tr><td style="font-family: ${FONT_STACK}; font-size: 13px; color: #888888; padding-bottom: 16px;">예약번호: <strong style="color: #1a1a2e;">${bookingId}</strong></td></tr>
+        </table>
+        <!-- Booking Info Table -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: ${FONT_STACK}; font-size: 14px;">
+          <tr style="border-bottom: 1px solid #f0f0f0;">
+            <td style="padding: 12px 0; color: #888888; width: 120px; border-bottom: 1px solid #f0f0f0;">객실</td>
+            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${roomName} (${roomNameEn})</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">체크인</td>
+            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${data.checkIn}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">체크아웃</td>
+            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${data.checkOut} (${nights}박)</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">인원</td>
+            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${data.guestCount}명</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">예약 유형</td>
+            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${typeLabel}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">예상 금액</td>
+            <td style="padding: 12px 0; font-weight: 600; color: #d4af37; border-bottom: 1px solid #f0f0f0;">${priceText}</td>
+          </tr>
+        </table>
+        <!-- Guest Info -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 24px;">
+          <tr><td style="font-family: ${FONT_STACK}; font-size: 16px; font-weight: 700; color: #1a1a2e; padding-bottom: 12px;">고객 정보</td></tr>
+        </table>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: ${FONT_STACK}; font-size: 14px;">
+          <tr>
+            <td style="padding: 12px 0; color: #888888; width: 120px; border-bottom: 1px solid #f0f0f0;">이름</td>
+            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${data.guestName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">이메일</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;"><a href="mailto:${data.guestEmail}" style="color: #1a1a2e; text-decoration: none;">${data.guestEmail}</a></td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">전화</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;"><a href="tel:${data.guestPhone}" style="color: #1a1a2e; text-decoration: none;">${data.guestPhone}</a></td>
+          </tr>
+          ${data.specialRequests ? `<tr>
+            <td style="padding: 12px 0; color: #888888; vertical-align: top;">요청사항</td>
+            <td style="padding: 12px 0; color: #1a1a2e;">${data.specialRequests}</td>
+          </tr>` : ''}
+        </table>
+        <!-- Confirm Button -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 32px;">
+          <tr><td align="center">
+            <!--[if mso]>
+            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${confirmUrl}" style="height:52px;v-text-anchor:middle;width:280px;" fillcolor="#d4af37" stroke="f">
+              <center style="color:#1a1a2e;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">예약 확정하기</center>
+            </v:roundrect>
+            <![endif]-->
+            <!--[if !mso]><!-->
+            <a href="${confirmUrl}" style="display: inline-block; padding: 16px 48px; background-color: #d4af37; color: #1a1a2e; font-family: ${FONT_STACK}; font-size: 16px; font-weight: 700; text-decoration: none; letter-spacing: 1px;">예약 확정하기</a>
+            <!--<![endif]-->
+          </td></tr>
+          <tr><td align="center" style="padding-top: 12px; font-family: ${FONT_STACK}; font-size: 12px; color: #aaaaaa;">위 버튼을 클릭하면 예약이 확정되고 고객에게 확인 메일이 발송됩니다.</td></tr>
+        </table>
+      </td></tr>
     </table>
-
-    <h3 style="font-size: 16px; margin: 24px 0 12px 0; color: #1a1a2e;">고객 정보</h3>
-    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px 0; color: #888; width: 120px;">이름</td>
-        <td style="padding: 12px 0; font-weight: 600;">${data.guestName}</td>
-      </tr>
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px 0; color: #888;">이메일</td>
-        <td style="padding: 12px 0;"><a href="mailto:${data.guestEmail}" style="color: #1a1a2e;">${data.guestEmail}</a></td>
-      </tr>
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 12px 0; color: #888;">전화</td>
-        <td style="padding: 12px 0;"><a href="tel:${data.guestPhone}" style="color: #1a1a2e;">${data.guestPhone}</a></td>
-      </tr>
-      ${data.specialRequests ? `
-      <tr>
-        <td style="padding: 12px 0; color: #888; vertical-align: top;">요청사항</td>
-        <td style="padding: 12px 0;">${data.specialRequests}</td>
-      </tr>` : ''}
-    </table>
-
-    <!-- CONFIRM BUTTON -->
-    <div style="margin-top: 32px; text-align: center;">
-      <a href="${confirmUrl}" style="display: inline-block; padding: 16px 48px; background: #d4af37; color: #1a1a2e; font-size: 16px; font-weight: 700; text-decoration: none; letter-spacing: 1px;">
-        예약 확정하기
-      </a>
-      <p style="font-size: 12px; color: #aaa; margin-top: 12px;">위 버튼을 클릭하면 예약이 확정되고 고객에게 확인 메일이 발송됩니다.</p>
-    </div>
-  </div>
-</div>`;
+  </td></tr>
+</table>
+</body>
+</html>`;
 
   try {
     await sendEmail({
@@ -198,7 +215,14 @@ export async function sendBookingEmail(
 }
 
 /**
- * Phase 2: Send confirmation email to GUEST (after hotel confirms)
+ * Phase 2: Send professional HTML receipt to GUEST (after hotel confirms)
+ *
+ * Cross-client compatible HTML email receipt:
+ * - Table-based layout (Outlook Word engine compatible)
+ * - Inline CSS only (Gmail compatible)
+ * - 600px max-width (universal standard)
+ * - Bilingual: Korean + English
+ * - Brand colors: Navy #1a1a2e, Gold #d4af37
  */
 export async function sendConfirmationEmail(
   data: BookingFormData,
@@ -208,75 +232,210 @@ export async function sendConfirmationEmail(
   const hotelEmail = brand.contact.email;
   const hotelPhone = brand.contact.phone;
   const brandName = brand.name.ko;
-  const { roomName, nights, priceText } = getBookingDetails(data);
+  const { roomName, roomNameEn, nights, priceText, typeLabel, typeLabelEn } = getBookingDetails(data);
   const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const confirmedDate = new Date().toISOString().split('T')[0];
 
-  const guestHtml = `
-<div style="font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a2e;">
-  <div style="background: #1a1a2e; padding: 24px 32px; text-align: center;">
-    <h1 style="color: #d4af37; font-size: 18px; margin: 0; letter-spacing: 2px;">${brandName}</h1>
-  </div>
-  <div style="padding: 32px; border: 1px solid #e5e5e5; border-top: none;">
-    <h2 style="font-size: 20px; margin: 0 0 8px 0; text-align: center;">예약이 확정되었습니다</h2>
-    <p style="text-align: center; font-size: 13px; color: #888; margin: 0 0 24px 0;">Your booking has been confirmed.</p>
+  const guestHtml = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Confirmation - ${bookingId}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+<!-- Wrapper Table -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f5;">
+  <tr><td align="center" style="padding: 32px 16px;">
 
-    <div style="background: #f8f8f8; padding: 20px; margin-bottom: 24px;">
-      <p style="font-size: 12px; color: #888; margin: 0 0 4px 0;">예약번호 / Booking No.</p>
-      <p style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 1px;">${bookingId}</p>
-    </div>
+    <!-- Main Container (600px) -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; width: 100%; border-collapse: collapse;">
 
-    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 10px 0; color: #888;">객실 / Room</td>
-        <td style="padding: 10px 0; text-align: right; font-weight: 600;">${roomName}</td>
-      </tr>
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 10px 0; color: #888;">체크인 / Check-in</td>
-        <td style="padding: 10px 0; text-align: right;">${data.checkIn}</td>
-      </tr>
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 10px 0; color: #888;">체크아웃 / Check-out</td>
-        <td style="padding: 10px 0; text-align: right;">${data.checkOut} (${nights}박)</td>
-      </tr>
-      <tr style="border-bottom: 1px solid #f0f0f0;">
-        <td style="padding: 10px 0; color: #888;">인원 / Guests</td>
-        <td style="padding: 10px 0; text-align: right;">${data.guestCount}</td>
-      </tr>
-      <tr>
-        <td style="padding: 10px 0; color: #888;">예상 금액 / Est. Total</td>
-        <td style="padding: 10px 0; text-align: right; font-weight: 600; color: #d4af37;">${priceText}</td>
-      </tr>
+      <!-- ============================================ -->
+      <!-- HEADER: Navy background with brand name     -->
+      <!-- ============================================ -->
+      <tr><td style="background-color: #1a1a2e; padding: 28px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td style="font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 700; color: #d4af37; letter-spacing: 3px;">STAY HOTEL</td>
+            <td align="right" style="font-family: ${FONT_STACK}; font-size: 10px; color: #8888a0; letter-spacing: 2px; text-transform: uppercase;">Booking Confirmation</td>
+          </tr>
+        </table>
+      </td></tr>
+      <!-- Gold accent line -->
+      <tr><td style="background-color: #d4af37; height: 3px; font-size: 0; line-height: 0;">&nbsp;</td></tr>
+
+      <!-- ============================================ -->
+      <!-- CONFIRMATION MESSAGE                         -->
+      <!-- ============================================ -->
+      <tr><td style="background-color: #ffffff; padding: 32px 40px 24px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td align="center" style="font-family: ${FONT_STACK}; font-size: 22px; font-weight: 700; color: #1a1a2e; padding-bottom: 8px;">예약이 확정되었습니다</td></tr>
+          <tr><td align="center" style="font-family: ${FONT_STACK}; font-size: 13px; color: #888888; padding-bottom: 4px;">Your booking has been confirmed.</td></tr>
+        </table>
+      </td></tr>
+
+      <!-- ============================================ -->
+      <!-- BOOKING NUMBER BOX                           -->
+      <!-- ============================================ -->
+      <tr><td style="background-color: #ffffff; padding: 0 40px 28px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8f8f8; border-left: 4px solid #d4af37;">
+          <tr><td style="padding: 20px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td>
+                  <span style="font-family: ${FONT_STACK}; font-size: 11px; color: #888888; letter-spacing: 1px;">예약번호 / Booking No.</span><br>
+                  <span style="font-family: 'Courier New', Courier, monospace; font-size: 22px; font-weight: 700; color: #1a1a2e; letter-spacing: 1px;">${bookingId}</span>
+                </td>
+                <td align="right" style="vertical-align: bottom;">
+                  <span style="font-family: ${FONT_STACK}; font-size: 11px; color: #aaaaaa;">확정일: ${confirmedDate}</span>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- ============================================ -->
+      <!-- STAY DETAILS SECTION                         -->
+      <!-- ============================================ -->
+      <tr><td style="background-color: #ffffff; padding: 0 40px;">
+        <!-- Section Title -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td style="font-family: ${FONT_STACK}; font-size: 13px; font-weight: 700; color: #1a1a2e; letter-spacing: 2px; text-transform: uppercase; padding-bottom: 8px;">숙박 정보 / Stay Details</td></tr>
+          <tr><td style="border-bottom: 1px solid #d4af37; font-size: 0; line-height: 0; height: 1px;">&nbsp;</td></tr>
+        </table>
+        <!-- Details Table -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: ${FONT_STACK}; font-size: 14px;">
+          <tr>
+            <td style="padding: 14px 0 14px 0; color: #888888; width: 45%; border-bottom: 1px solid #f0f0f0;">객실 / Room</td>
+            <td style="padding: 14px 0 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${roomName}<br><span style="font-size: 12px; color: #888888; font-weight: 400;">${roomNameEn}</span></td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">체크인 / Check-in</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${data.checkIn} <span style="font-size: 12px; color: #888888; font-weight: 400;">(15:00)</span></td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">체크아웃 / Check-out</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${data.checkOut} <span style="font-size: 12px; color: #888888; font-weight: 400;">(12:00)</span></td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">숙박 / Duration</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${nights}박 / ${nights} night${nights > 1 ? 's' : ''}</td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">인원 / Guests</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${data.guestCount}명</td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">예약유형 / Type</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${typeLabel} / ${typeLabelEn}</td>
+          </tr>
+        </table>
+      </td></tr>
+
+      <!-- ============================================ -->
+      <!-- PRICE BOX                                    -->
+      <!-- ============================================ -->
+      <tr><td style="background-color: #ffffff; padding: 20px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #faf6eb; border: 1px solid #f0e8d0;">
+          <tr><td style="padding: 20px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family: ${FONT_STACK}; font-size: 13px; color: #888888; vertical-align: middle;">예상 금액 / Est. Total</td>
+                <td align="right" style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: 700; color: #d4af37; letter-spacing: 1px;">${priceText}</td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- ============================================ -->
+      <!-- GUEST INFORMATION SECTION                    -->
+      <!-- ============================================ -->
+      <tr><td style="background-color: #ffffff; padding: 8px 40px 0 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td style="font-family: ${FONT_STACK}; font-size: 13px; font-weight: 700; color: #1a1a2e; letter-spacing: 2px; text-transform: uppercase; padding-bottom: 8px;">투숙객 정보 / Guest Information</td></tr>
+          <tr><td style="border-bottom: 1px solid #d4af37; font-size: 0; line-height: 0; height: 1px;">&nbsp;</td></tr>
+        </table>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: ${FONT_STACK}; font-size: 14px;">
+          <tr>
+            <td style="padding: 14px 0; color: #888888; width: 45%; border-bottom: 1px solid #f0f0f0;">성명 / Name</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${data.guestName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">연락처 / Phone</td>
+            <td style="padding: 14px 0; color: #1a1a2e; text-align: right; border-bottom: 1px solid #f0f0f0;">${data.guestPhone}</td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">이메일 / Email</td>
+            <td style="padding: 14px 0; color: #1a1a2e; text-align: right; border-bottom: 1px solid #f0f0f0;">${data.guestEmail}</td>
+          </tr>
+          ${data.specialRequests ? `<tr>
+            <td style="padding: 14px 0; color: #888888; vertical-align: top;">요청사항 / Requests</td>
+            <td style="padding: 14px 0; color: #1a1a2e; text-align: right;">${data.specialRequests}</td>
+          </tr>` : ''}
+        </table>
+      </td></tr>
+
+      <!-- ============================================ -->
+      <!-- NOTICE / IMPORTANT INFORMATION               -->
+      <!-- ============================================ -->
+      <tr><td style="background-color: #ffffff; padding: 24px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #fffbeb; border-left: 3px solid #d4af37;">
+          <tr><td style="padding: 20px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: ${FONT_STACK}; font-size: 13px; color: #666666;">
+              <tr><td style="font-weight: 700; color: #1a1a2e; padding-bottom: 12px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;">안내사항 / Notice</td></tr>
+              <tr><td style="padding-bottom: 6px; line-height: 1.6;">&#8226; 결제는 현장에서 진행됩니다 (카드/현금)</td></tr>
+              <tr><td style="padding-bottom: 6px; line-height: 1.6;">&#8226; 체크인 24시간 전까지 무료 취소 가능합니다</td></tr>
+              <tr><td style="padding-bottom: 6px; line-height: 1.6;">&#8226; 문의사항은 호텔로 직접 연락해주세요</td></tr>
+              <tr><td style="padding-top: 8px; border-top: 1px solid #f0e8d0; color: #888888; line-height: 1.6;">&#8226; Payment will be processed on-site (card / cash)</td></tr>
+              <tr><td style="padding-bottom: 2px; color: #888888; line-height: 1.6;">&#8226; Free cancellation up to 24 hours before check-in</td></tr>
+              <tr><td style="color: #888888; line-height: 1.6;">&#8226; For inquiries, please contact the hotel directly</td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- ============================================ -->
+      <!-- FOOTER                                       -->
+      <!-- ============================================ -->
+      <tr><td style="background-color: #ffffff; padding: 0 40px 32px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td style="border-top: 1px solid #e5e5e5; padding-top: 24px;" align="center">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr><td align="center" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-weight: 700; color: #1a1a2e; letter-spacing: 2px; padding-bottom: 8px;">STAY HOTEL</td></tr>
+              <tr><td align="center" style="font-family: ${FONT_STACK}; font-size: 12px; color: #888888; padding-bottom: 4px;">${hotelPhone} &nbsp;|&nbsp; ${hotelEmail}</td></tr>
+              <tr><td align="center" style="font-family: ${FONT_STACK}; font-size: 12px; color: #888888; padding-bottom: 4px;">${brand.contact.address.ko}</td></tr>
+              <tr><td align="center" style="font-family: ${FONT_STACK}; font-size: 11px; color: #aaaaaa; padding-top: 4px;">${brand.contact.address.en}</td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </td></tr>
+
     </table>
+    <!-- /Main Container -->
 
-    <div style="margin-top: 24px; padding: 16px; background: #fffbeb; border-left: 3px solid #d4af37; font-size: 13px; color: #666;">
-      <p style="margin: 0 0 8px 0;"><strong>안내사항</strong></p>
-      <p style="margin: 0 0 4px 0;">- 결제는 현장에서 진행됩니다 (카드/현금).</p>
-      <p style="margin: 0 0 4px 0;">- 체크인 24시간 전까지 무료 취소 가능합니다.</p>
-      <p style="margin: 0;">- Payment will be processed on-site (card / cash).</p>
-    </div>
-
-    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e5e5; text-align: center; font-size: 13px; color: #888;">
-      <p style="margin: 0 0 4px 0;">${brandName}</p>
-      <p style="margin: 0 0 4px 0;">${hotelPhone} | ${hotelEmail}</p>
-      <p style="margin: 0;">${brand.contact.address.ko}</p>
-    </div>
-  </div>
-</div>`;
+  </td></tr>
+</table>
+</body>
+</html>`;
 
   try {
-    const pdfBytes = await generateBookingPDF(data, bookingId);
-    const pdfBase64 = uint8ArrayToBase64(new Uint8Array(pdfBytes));
-
     await sendEmail({
       from: `${brandName} <${fromEmail}>`,
       to: data.guestEmail,
       subject: `[STAY HOTEL] 예약 확정 / Booking Confirmed - ${bookingId}`,
       html: guestHtml,
-      attachments: [{
-        filename: `STAY_HOTEL_${bookingId}.pdf`,
-        content: pdfBase64,
-        content_type: 'application/pdf',
-      }],
     });
 
     console.log(`Guest confirmation sent: ${bookingId} -> ${data.guestEmail}`);

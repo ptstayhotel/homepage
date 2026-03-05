@@ -160,7 +160,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
 
     try {
       // Call API to create booking
-      const response = await fetch('/api/rooms', {
+      const response = await fetch('/api/booking-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
