@@ -47,15 +47,18 @@ function getStore(): KVLike {
   try {
     const ctx = getRequestContext();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const kv = (ctx.env as any).BOOKING_KV as KVLike | undefined;
+    const env = ctx.env as any;
+    const kv = env.BOOKING_KV as KVLike | undefined;
     if (kv) {
+      console.log('[BookingStore] ✅ Using Cloudflare KV (BOOKING_KV binding)');
       return kv;
     }
-    console.warn('[BookingStore] BOOKING_KV binding not found in env. Using in-memory fallback.');
-  } catch {
-    // getRequestContext() throws outside Cloudflare runtime (local dev)
+    const envKeys = Object.keys(env);
+    console.error(`[BookingStore] ❌ BOOKING_KV NOT FOUND in env. Available bindings: [${envKeys.join(', ')}]`);
+  } catch (e) {
+    console.error(`[BookingStore] ❌ getRequestContext() failed: ${e instanceof Error ? e.message : String(e)}`);
   }
-  console.warn('[BookingStore] Not in Cloudflare runtime. Using in-memory fallback (local dev only).');
+  console.warn('[BookingStore] ⚠️ FALLING BACK TO IN-MEMORY STORE — data will NOT persist between requests');
   return memoryFallback;
 }
 
@@ -71,10 +74,20 @@ export async function saveBooking(formData: BookingFormData, bookingId: string):
     createdAt: new Date().toISOString(),
   };
 
+  const kvKey = `booking:${booking.token}`;
   const kv = getStore();
-  await kv.put(`booking:${booking.token}`, JSON.stringify(booking), { expirationTtl: KV_TTL });
 
-  console.log(`[BookingStore] Saved: ${bookingId} | token: ${booking.token}`);
+  console.log(`[BookingStore] PUT key="${kvKey}" | bookingId=${bookingId}`);
+  await kv.put(kvKey, JSON.stringify(booking), { expirationTtl: KV_TTL });
+
+  // Verify write — immediate read-back
+  const verify = await kv.get(kvKey);
+  if (verify) {
+    console.log(`[BookingStore] ✅ PUT verified: key="${kvKey}" | data length=${verify.length}`);
+  } else {
+    console.error(`[BookingStore] ❌ PUT verification FAILED: key="${kvKey}" — read-back returned null`);
+  }
+
   return booking;
 }
 
@@ -82,16 +95,21 @@ export async function saveBooking(formData: BookingFormData, bookingId: string):
  * Find a booking by its confirmation token
  */
 export async function getBookingByToken(token: string): Promise<StoredBooking | null> {
+  const kvKey = `booking:${token}`;
+  console.log(`[BookingStore] GET key="${kvKey}"`);
+
   const kv = getStore();
-  const data = await kv.get(`booking:${token}`);
+  const data = await kv.get(kvKey);
+
+  console.log(`[BookingStore] KV GET result: ${data === null ? 'NULL' : `string(${data.length} chars)`}`);
 
   if (!data) {
-    console.error(`[BookingStore] LOOKUP FAILED: token="${token}" | No data found in KV store`);
+    console.error(`[BookingStore] ❌ LOOKUP FAILED: key="${kvKey}" | KV returned null`);
     return null;
   }
 
   const booking = JSON.parse(data) as StoredBooking;
-  console.log(`[BookingStore] Found: ${booking.bookingId} | status: ${booking.status}`);
+  console.log(`[BookingStore] ✅ Found: ${booking.bookingId} | status: ${booking.status} | token: ${token}`);
   return booking;
 }
 
@@ -99,11 +117,16 @@ export async function getBookingByToken(token: string): Promise<StoredBooking | 
  * Confirm a booking by token, returns the updated booking or null if not found
  */
 export async function confirmBooking(token: string): Promise<StoredBooking | null> {
+  const kvKey = `booking:${token}`;
+  console.log(`[BookingStore] CONFIRM key="${kvKey}"`);
+
   const kv = getStore();
-  const data = await kv.get(`booking:${token}`);
+  const data = await kv.get(kvKey);
+
+  console.log(`[BookingStore] CONFIRM GET result: ${data === null ? 'NULL' : `string(${data.length} chars)`}`);
 
   if (!data) {
-    console.error(`[BookingStore] CONFIRM FAILED: token="${token}" | Booking not found in KV`);
+    console.error(`[BookingStore] ❌ CONFIRM FAILED: key="${kvKey}" | KV returned null`);
     return null;
   }
 
@@ -111,8 +134,8 @@ export async function confirmBooking(token: string): Promise<StoredBooking | nul
   booking.status = 'confirmed';
   booking.confirmedAt = new Date().toISOString();
 
-  await kv.put(`booking:${token}`, JSON.stringify(booking), { expirationTtl: KV_TTL });
+  await kv.put(kvKey, JSON.stringify(booking), { expirationTtl: KV_TTL });
 
-  console.log(`[BookingStore] Confirmed: ${booking.bookingId} | token: ${token}`);
+  console.log(`[BookingStore] ✅ Confirmed: ${booking.bookingId} | token: ${token}`);
   return booking;
 }
