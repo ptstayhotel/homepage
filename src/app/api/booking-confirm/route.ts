@@ -75,11 +75,11 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Guard: booking not found ──
-  const existing = getBookingByToken(token);
+  const existing = await getBookingByToken(token);
   if (!existing) {
-    console.error(`[booking-confirm] BOOKING NOT FOUND | token: "${token}" | This likely means the V8 isolate was recycled (In-Memory store lost). Cloudflare Edge does NOT share memory between isolates.`);
+    console.error(`[booking-confirm] BOOKING NOT FOUND | token: "${token}" | KV lookup returned null`);
     return new NextResponse(
-      htmlPage('예약을 찾을 수 없습니다', '유효하지 않거나 만료된 링크입니다. 서버가 재시작되어 예약 데이터가 초기화되었을 수 있습니다.'),
+      htmlPage('예약을 찾을 수 없습니다', '유효하지 않거나 만료된 링크입니다.'),
       { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
     );
   }
@@ -92,8 +92,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // ── Step 1: Update status → 'confirmed' ──
-  const booking = confirmBooking(token);
+  // ── Step 1: Update status → 'confirmed' in KV ──
+  const booking = await confirmBooking(token);
   if (!booking) {
     return new NextResponse(
       htmlPage('오류 발생', '예약 확정 처리 중 오류가 발생했습니다.'),

@@ -1,13 +1,17 @@
 /**
- * Booking Store - Edge Runtime Compatible (In-Memory)
+ * Booking Store - Cloudflare KV Persistent Storage
  *
- * In-memory store for booking data.
- * TODO: Production에서는 Cloudflare KV 또는 D1로 교체 필요.
+ * Uses Cloudflare KV binding (BOOKING_KV) for persistent booking data.
+ * Falls back to in-memory Map for local development only.
  *
- * NOTE: In-memory 데이터는 Worker 재시작 시 초기화됩니다.
- * 기존 파일 기반 저장소도 재배포 시 데이터가 초기화되므로 동일 수준입니다.
+ * Cloudflare Pages setup required:
+ * 1. Create KV namespace "stayhotel-bookings" in Cloudflare dashboard
+ * 2. Bind it as "BOOKING_KV" in Pages → Settings → Functions → KV namespace bindings
+ *
+ * Bookings expire after 30 days (KV TTL).
  */
 
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import { BookingFormData } from '@/types';
 
 export interface StoredBooking {
@@ -19,13 +23,46 @@ export interface StoredBooking {
   confirmedAt?: string;
 }
 
-// In-memory store (Edge runtime에서 cold start 간 유지되지 않음)
-const bookingsMap = new Map<string, StoredBooking>();
+/**
+ * KV-compatible interface (subset of Cloudflare KVNamespace)
+ */
+interface KVLike {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+}
+
+// In-memory fallback for local development (next dev)
+const memoryStore = new Map<string, string>();
+const memoryFallback: KVLike = {
+  async get(key: string) { return memoryStore.get(key) ?? null; },
+  async put(key: string, value: string) { memoryStore.set(key, value); },
+};
+
+const KV_TTL = 60 * 60 * 24 * 30; // 30 days
+
+/**
+ * Get KV store — Cloudflare KV in production, in-memory in local dev
+ */
+function getStore(): KVLike {
+  try {
+    const ctx = getRequestContext();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const kv = (ctx.env as any).BOOKING_KV as KVLike | undefined;
+    if (kv) {
+      return kv;
+    }
+    console.warn('[BookingStore] BOOKING_KV binding not found in env. Using in-memory fallback.');
+  } catch {
+    // getRequestContext() throws outside Cloudflare runtime (local dev)
+  }
+  console.warn('[BookingStore] Not in Cloudflare runtime. Using in-memory fallback (local dev only).');
+  return memoryFallback;
+}
 
 /**
  * Save a new booking with pending status
  */
-export function saveBooking(formData: BookingFormData, bookingId: string): StoredBooking {
+export async function saveBooking(formData: BookingFormData, bookingId: string): Promise<StoredBooking> {
   const booking: StoredBooking = {
     bookingId,
     token: crypto.randomUUID(),
@@ -34,37 +71,47 @@ export function saveBooking(formData: BookingFormData, bookingId: string): Store
     createdAt: new Date().toISOString(),
   };
 
-  bookingsMap.set(booking.token, booking);
+  const kv = getStore();
+  await kv.put(`booking:${booking.token}`, JSON.stringify(booking), { expirationTtl: KV_TTL });
 
-  console.log(`[BookingStore] Saved: ${bookingId} | token: ${booking.token} | map size: ${bookingsMap.size}`);
+  console.log(`[BookingStore] Saved: ${bookingId} | token: ${booking.token}`);
   return booking;
 }
 
 /**
  * Find a booking by its confirmation token
  */
-export function getBookingByToken(token: string): StoredBooking | null {
-  const booking = bookingsMap.get(token) || null;
-  if (!booking) {
-    const storedTokens: string[] = [];
-    bookingsMap.forEach((_, key) => storedTokens.push(key));
-    console.error(`[BookingStore] LOOKUP FAILED: token="${token}" | map size: ${bookingsMap.size} | stored tokens: [${storedTokens.join(', ')}]`);
-  } else {
-    console.log(`[BookingStore] Found: ${booking.bookingId} | status: ${booking.status}`);
+export async function getBookingByToken(token: string): Promise<StoredBooking | null> {
+  const kv = getStore();
+  const data = await kv.get(`booking:${token}`);
+
+  if (!data) {
+    console.error(`[BookingStore] LOOKUP FAILED: token="${token}" | No data found in KV store`);
+    return null;
   }
+
+  const booking = JSON.parse(data) as StoredBooking;
+  console.log(`[BookingStore] Found: ${booking.bookingId} | status: ${booking.status}`);
   return booking;
 }
 
 /**
  * Confirm a booking by token, returns the updated booking or null if not found
  */
-export function confirmBooking(token: string): StoredBooking | null {
-  const booking = bookingsMap.get(token);
-  if (!booking) return null;
+export async function confirmBooking(token: string): Promise<StoredBooking | null> {
+  const kv = getStore();
+  const data = await kv.get(`booking:${token}`);
 
+  if (!data) {
+    console.error(`[BookingStore] CONFIRM FAILED: token="${token}" | Booking not found in KV`);
+    return null;
+  }
+
+  const booking = JSON.parse(data) as StoredBooking;
   booking.status = 'confirmed';
   booking.confirmedAt = new Date().toISOString();
-  bookingsMap.set(token, booking);
+
+  await kv.put(`booking:${token}`, JSON.stringify(booking), { expirationTtl: KV_TTL });
 
   console.log(`[BookingStore] Confirmed: ${booking.bookingId} | token: ${token}`);
   return booking;

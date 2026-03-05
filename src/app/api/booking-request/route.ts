@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
     // Generate booking ID
     const bookingId = 'BK-' + Date.now().toString(36).toUpperCase();
 
-    // Save booking as pending
-    const booking = saveBooking(body, bookingId);
+    // Save booking as pending (KV persistent storage)
+    const booking = await saveBooking(body, bookingId);
 
     // Send notification to hotel — MUST await before returning response.
     // Cloudflare Edge kills the V8 isolate the moment the response is sent.
