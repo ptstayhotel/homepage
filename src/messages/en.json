@@ -123,7 +123,8 @@
     "paymentNote": "Payment will be processed at the hotel upon check-in",
     "bookingSuccess": "Booking Request Received!",
     "bookingSuccessMessage": "The hotel will review and send a confirmation email shortly.",
-    "bookingId": "Booking ID",
+    "bookingId": "Request Number (Pending)",
+    "bookingPendingNotice": "Your reservation request has been received but is NOT confirmed yet. We will send you a confirmation email once the administrator approves your request.",
     "backToHome": "Back to Home",
     "makeAnotherBooking": "Book Another Room"
   },

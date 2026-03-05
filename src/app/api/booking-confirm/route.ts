@@ -64,6 +64,8 @@ function htmlPage(title: string, message: string, details?: string) {
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('token');
 
+  console.log(`[booking-confirm] Received request | token: ${token || '(none)'}`);
+
   // ── Guard: missing token ──
   if (!token) {
     return new NextResponse(
@@ -75,8 +77,9 @@ export async function GET(request: NextRequest) {
   // ── Guard: booking not found ──
   const existing = getBookingByToken(token);
   if (!existing) {
+    console.error(`[booking-confirm] BOOKING NOT FOUND | token: "${token}" | This likely means the V8 isolate was recycled (In-Memory store lost). Cloudflare Edge does NOT share memory between isolates.`);
     return new NextResponse(
-      htmlPage('예약을 찾을 수 없습니다', '유효하지 않거나 만료된 링크입니다.'),
+      htmlPage('예약을 찾을 수 없습니다', '유효하지 않거나 만료된 링크입니다. 서버가 재시작되어 예약 데이터가 초기화되었을 수 있습니다.'),
       { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
     );
   }

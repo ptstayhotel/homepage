@@ -123,7 +123,8 @@
     "paymentNote": "お支払いはチェックイン時にホテルにて行います",
     "bookingSuccess": "予約リクエストを受け付けました！",
     "bookingSuccessMessage": "ホテルにて確認後、確定メールをお送りいたします。",
-    "bookingId": "予約番号",
+    "bookingId": "予約受付番号（承認待ち）",
+    "bookingPendingNotice": "予約リクエストを受け付けましたが、まだ確定されていません。管理者が確認後、確定メールをお送りいたします。",
     "backToHome": "ホームに戻る",
     "makeAnotherBooking": "別の客室を予約する"
   },

@@ -565,8 +565,13 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
               {t('bookingSuccess')}
             </h2>
             <p className="text-neutral-500 mb-8">{t('bookingSuccessMessage')}</p>
-            <div className="inline-block border border-neutral-200 px-8 py-4 mb-10">
-              <span className="text-xs text-neutral-500 tracking-widest uppercase block mb-1">{t('bookingId')}</span>
+            {/* Pending warning banner */}
+            <div className="max-w-md mx-auto mb-8 p-4 bg-amber-50 border border-amber-300 text-amber-800 text-sm leading-relaxed">
+              <span className="font-bold block mb-1">&#9888; {{ ko: '안내', en: 'Notice', ja: 'ご案内', zh: '提示' }[locale]}</span>
+              {t('bookingPendingNotice')}
+            </div>
+            <div className="inline-block border-2 border-amber-400 bg-amber-50 px-8 py-4 mb-10">
+              <span className="text-xs text-amber-700 tracking-widest uppercase block mb-1">{t('bookingId')}</span>
               <p className="text-xl font-mono font-bold text-primary-900">{bookingId}</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

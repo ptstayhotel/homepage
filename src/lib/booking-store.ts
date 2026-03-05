@@ -36,7 +36,7 @@ export function saveBooking(formData: BookingFormData, bookingId: string): Store
 
   bookingsMap.set(booking.token, booking);
 
-  console.log(`Booking saved: ${bookingId} (pending)`);
+  console.log(`[BookingStore] Saved: ${bookingId} | token: ${booking.token} | map size: ${bookingsMap.size}`);
   return booking;
 }
 
@@ -44,7 +44,15 @@ export function saveBooking(formData: BookingFormData, bookingId: string): Store
  * Find a booking by its confirmation token
  */
 export function getBookingByToken(token: string): StoredBooking | null {
-  return bookingsMap.get(token) || null;
+  const booking = bookingsMap.get(token) || null;
+  if (!booking) {
+    const storedTokens: string[] = [];
+    bookingsMap.forEach((_, key) => storedTokens.push(key));
+    console.error(`[BookingStore] LOOKUP FAILED: token="${token}" | map size: ${bookingsMap.size} | stored tokens: [${storedTokens.join(', ')}]`);
+  } else {
+    console.log(`[BookingStore] Found: ${booking.bookingId} | status: ${booking.status}`);
+  }
+  return booking;
 }
 
 /**
@@ -58,6 +66,6 @@ export function confirmBooking(token: string): StoredBooking | null {
   booking.confirmedAt = new Date().toISOString();
   bookingsMap.set(token, booking);
 
-  console.log(`Booking confirmed: ${booking.bookingId}`);
+  console.log(`[BookingStore] Confirmed: ${booking.bookingId} | token: ${token}`);
   return booking;
 }

@@ -123,7 +123,8 @@
     "paymentNote": "付款将在入住时在酒店前台进行",
     "bookingSuccess": "预订请求已受理！",
     "bookingSuccessMessage": "酒店确认后将发送确认邮件，请查看您的预订编号。",
-    "bookingId": "预订编号",
+    "bookingId": "预订受理编号（待审批）",
+    "bookingPendingNotice": "您的预订请求已受理，但尚未确认。管理员审核后将发送确认邮件。",
     "backToHome": "返回首页",
     "makeAnotherBooking": "预订其他客房"
   },
