@@ -1,13 +1,13 @@
 /**
- * Booking Store - JSON file-based storage
+ * Booking Store - Edge Runtime Compatible (In-Memory)
  *
- * Stores bookings in data/bookings.json with pending/confirmed status.
- * Used for the hotel-approval booking flow.
+ * In-memory store for booking data.
+ * TODO: Production에서는 Cloudflare KV 또는 D1로 교체 필요.
+ *
+ * NOTE: In-memory 데이터는 Worker 재시작 시 초기화됩니다.
+ * 기존 파일 기반 저장소도 재배포 시 데이터가 초기화되므로 동일 수준입니다.
  */
 
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
 import { BookingFormData } from '@/types';
 
 export interface StoredBooking {
@@ -19,24 +19,8 @@ export interface StoredBooking {
   confirmedAt?: string;
 }
 
-const BOOKINGS_PATH = path.join(process.cwd(), 'data', 'bookings.json');
-
-function readBookings(): StoredBooking[] {
-  try {
-    const data = fs.readFileSync(BOOKINGS_PATH, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-function writeBookings(bookings: StoredBooking[]): void {
-  const dir = path.dirname(BOOKINGS_PATH);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(BOOKINGS_PATH, JSON.stringify(bookings, null, 2), 'utf-8');
-}
+// In-memory store (Edge runtime에서 cold start 간 유지되지 않음)
+const bookingsMap = new Map<string, StoredBooking>();
 
 /**
  * Save a new booking with pending status
@@ -50,11 +34,9 @@ export function saveBooking(formData: BookingFormData, bookingId: string): Store
     createdAt: new Date().toISOString(),
   };
 
-  const bookings = readBookings();
-  bookings.push(booking);
-  writeBookings(bookings);
+  bookingsMap.set(booking.token, booking);
 
-  console.log(`📝 Booking saved: ${bookingId} (pending)`);
+  console.log(`Booking saved: ${bookingId} (pending)`);
   return booking;
 }
 
@@ -62,23 +44,20 @@ export function saveBooking(formData: BookingFormData, bookingId: string): Store
  * Find a booking by its confirmation token
  */
 export function getBookingByToken(token: string): StoredBooking | null {
-  const bookings = readBookings();
-  return bookings.find((b) => b.token === token) || null;
+  return bookingsMap.get(token) || null;
 }
 
 /**
  * Confirm a booking by token, returns the updated booking or null if not found
  */
 export function confirmBooking(token: string): StoredBooking | null {
-  const bookings = readBookings();
-  const index = bookings.findIndex((b) => b.token === token);
+  const booking = bookingsMap.get(token);
+  if (!booking) return null;
 
-  if (index === -1) return null;
+  booking.status = 'confirmed';
+  booking.confirmedAt = new Date().toISOString();
+  bookingsMap.set(token, booking);
 
-  bookings[index].status = 'confirmed';
-  bookings[index].confirmedAt = new Date().toISOString();
-  writeBookings(bookings);
-
-  console.log(`✅ Booking confirmed: ${bookings[index].bookingId}`);
-  return bookings[index];
+  console.log(`Booking confirmed: ${booking.bookingId}`);
+  return booking;
 }

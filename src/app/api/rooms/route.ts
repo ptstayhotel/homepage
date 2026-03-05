@@ -6,6 +6,8 @@
  * POST /api/rooms - Create a booking (pending, sends email to hotel only)
  */
 
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { BookingFormData } from '@/types';
 import { rooms, getRoomById } from '@/config/rooms';

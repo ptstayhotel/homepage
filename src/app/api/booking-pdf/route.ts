@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { generateBookingPDF } from '@/lib/booking-pdf';
 
@@ -12,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     const pdfBytes = await generateBookingPDF(bookingData, bookingId);
 
-    return new NextResponse(Buffer.from(pdfBytes), {
+    return new NextResponse(new Uint8Array(pdfBytes), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="STAY_HOTEL_${bookingId}.pdf"`,
@@ -36,7 +38,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing data' }, { status: 400 });
     }
 
-    const decoded = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf-8'));
+    // Edge-compatible base64url decoding (Buffer 대체)
+    let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) base64 += '=';
+    const jsonStr = atob(base64);
+    const decoded = JSON.parse(jsonStr);
     const { bookingData, bookingId } = decoded;
 
     if (!bookingData || !bookingId) {
@@ -45,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     const pdfBytes = await generateBookingPDF(bookingData, bookingId);
 
-    return new NextResponse(Buffer.from(pdfBytes), {
+    return new NextResponse(new Uint8Array(pdfBytes), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="STAY_HOTEL_${bookingId}.pdf"`,

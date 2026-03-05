@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchNaverBlogPosts, getNaverBlogId } from '@/lib/utils/blog';
 
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 /**

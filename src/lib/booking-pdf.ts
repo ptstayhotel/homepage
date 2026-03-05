@@ -1,7 +1,8 @@
 /**
- * Booking Confirmation PDF Generator
+ * Booking Confirmation PDF Generator - Edge Runtime Compatible
  *
  * Premium hotel-style PDF with elegant layout (English).
+ * Font is loaded via fetch() from public/fonts/ directory.
  */
 
 import { PDFDocument, rgb, PDFFont, PDFPage } from 'pdf-lib';
@@ -9,18 +10,21 @@ import fontkit from '@pdf-lib/fontkit';
 import { BookingFormData } from '@/types';
 import { getRoomById, getRoomName, formatPrice, calculateRoomTotal } from '@/config/rooms';
 import { getBrandConfig } from '@/config/brand';
-import fs from 'fs';
-import path from 'path';
 
-let cachedFont: Buffer | null = null;
+let cachedFont: ArrayBuffer | null = null;
 
-function getFont(): Buffer {
+async function getFont(): Promise<ArrayBuffer> {
   if (cachedFont) return cachedFont;
-  // Try Windows system font first, fallback to bundled font
-  const winPath = 'C:\\Windows\\Fonts\\malgun.ttf';
-  const bundledPath = path.join(process.cwd(), 'src', 'fonts', 'NotoSansKR-Regular.otf');
-  const fontPath = fs.existsSync(winPath) ? winPath : bundledPath;
-  cachedFont = fs.readFileSync(fontPath);
+
+  const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const fontUrl = `${siteUrl}/fonts/Pretendard-Regular.otf`;
+
+  const response = await fetch(fontUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to load font: ${response.status} ${response.statusText}`);
+  }
+
+  cachedFont = await response.arrayBuffer();
   return cachedFont;
 }
 
@@ -84,7 +88,7 @@ export async function generateBookingPDF(
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
 
-  const fontBytes = getFont();
+  const fontBytes = await getFont();
   const font = await pdfDoc.embedFont(fontBytes);
 
   const brand = getBrandConfig();

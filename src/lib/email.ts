@@ -1,17 +1,18 @@
 /**
- * Email Utility for Booking Notifications
+ * Email Utility for Booking Notifications - Edge Runtime Compatible
+ *
+ * Uses Resend API (fetch-based) instead of nodemailer.
  *
  * Two-phase booking flow:
  * 1. sendBookingEmail() - Hotel gets notification with "Confirm" button
  * 2. sendConfirmationEmail() - Guest gets confirmation + PDF after hotel confirms
  *
  * Required environment variables:
- * - SMTP_USER: Gmail address
- * - SMTP_PASS: Gmail app password
+ * - RESEND_API_KEY: Resend API key (re_xxxx)
+ * - EMAIL_FROM: Verified sender email (e.g., booking@yourdomain.com)
  * - SITE_URL: Site base URL (for confirm button link)
  */
 
-import nodemailer from 'nodemailer';
 import { BookingFormData } from '@/types';
 import { getRoomById, getRoomName, formatPrice, calculateRoomTotal } from '@/config/rooms';
 import { getBrandConfig } from '@/config/brand';
@@ -23,18 +24,58 @@ const RESERVATION_TYPE_LABELS: Record<string, Record<string, string>> = {
   military: { ko: '군인', en: 'Military' },
 };
 
-function getTransporter() {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+/**
+ * Edge-compatible base64 encoding (Buffer 대체)
+ */
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
 
-  if (!user || !pass) {
-    throw new Error('SMTP_USER and SMTP_PASS environment variables are required');
+/**
+ * fetch 기반 이메일 전송 (Resend API)
+ */
+async function sendEmail(options: {
+  to: string;
+  from: string;
+  subject: string;
+  html: string;
+  attachments?: Array<{
+    filename: string;
+    content: string; // base64 encoded
+    content_type: string;
+  }>;
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('[Email] RESEND_API_KEY not configured. Skipping email send.');
+    console.log(`[Email] Would have sent to: ${options.to}`);
+    console.log(`[Email] Subject: ${options.subject}`);
+    return;
   }
 
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user, pass },
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: options.from,
+      to: [options.to],
+      subject: options.subject,
+      html: options.html,
+      attachments: options.attachments,
+    }),
   });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Email send failed: ${response.status} - ${errorBody}`);
+  }
 }
 
 function calculateNights(checkIn: string, checkOut: string): number {
@@ -61,7 +102,6 @@ export async function sendBookingEmail(
   bookingId: string,
   confirmToken: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const transporter = getTransporter();
   const brand = getBrandConfig();
   const hotelEmail = brand.contact.email;
   const brandName = brand.name.ko;
@@ -69,6 +109,7 @@ export async function sendBookingEmail(
 
   const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   const confirmUrl = `${siteUrl}/api/booking-confirm?token=${confirmToken}`;
+  const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
   const hotelHtml = `
 <div style="font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a2e;">
@@ -138,14 +179,14 @@ export async function sendBookingEmail(
 </div>`;
 
   try {
-    await transporter.sendMail({
-      from: `"${brandName} 예약시스템" <${process.env.SMTP_USER}>`,
+    await sendEmail({
+      from: `${brandName} 예약시스템 <${fromEmail}>`,
       to: hotelEmail,
       subject: `[STAY HOTEL] 새 예약 접수 - ${data.guestName} (${data.checkIn} ~ ${data.checkOut})`,
       html: hotelHtml,
     });
 
-    console.log(`📧 Hotel notification sent: ${bookingId} → ${hotelEmail}`);
+    console.log(`Hotel notification sent: ${bookingId} -> ${hotelEmail}`);
     return { success: true };
   } catch (error) {
     console.error('Hotel email send failed:', error);
@@ -163,12 +204,12 @@ export async function sendConfirmationEmail(
   data: BookingFormData,
   bookingId: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const transporter = getTransporter();
   const brand = getBrandConfig();
   const hotelEmail = brand.contact.email;
   const hotelPhone = brand.contact.phone;
   const brandName = brand.name.ko;
   const { roomName, nights, priceText } = getBookingDetails(data);
+  const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
   const guestHtml = `
 <div style="font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a2e;">
@@ -223,23 +264,22 @@ export async function sendConfirmationEmail(
 </div>`;
 
   try {
-    // Generate PDF confirmation
     const pdfBytes = await generateBookingPDF(data, bookingId);
-    const pdfAttachment = {
-      filename: `STAY_HOTEL_${bookingId}.pdf`,
-      content: Buffer.from(pdfBytes),
-      contentType: 'application/pdf' as const,
-    };
+    const pdfBase64 = uint8ArrayToBase64(new Uint8Array(pdfBytes));
 
-    await transporter.sendMail({
-      from: `"${brandName}" <${process.env.SMTP_USER}>`,
+    await sendEmail({
+      from: `${brandName} <${fromEmail}>`,
       to: data.guestEmail,
       subject: `[STAY HOTEL] 예약 확정 / Booking Confirmed - ${bookingId}`,
       html: guestHtml,
-      attachments: [pdfAttachment],
+      attachments: [{
+        filename: `STAY_HOTEL_${bookingId}.pdf`,
+        content: pdfBase64,
+        content_type: 'application/pdf',
+      }],
     });
 
-    console.log(`📧 Guest confirmation sent: ${bookingId} → ${data.guestEmail}`);
+    console.log(`Guest confirmation sent: ${bookingId} -> ${data.guestEmail}`);
     return { success: true };
   } catch (error) {
     console.error('Guest email send failed:', error);

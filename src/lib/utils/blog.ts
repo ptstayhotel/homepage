@@ -1,7 +1,8 @@
 /**
- * Blog/RSS Feed Utilities
+ * Blog/RSS Feed Utilities - Edge Runtime Compatible
  *
- * Handles fetching and parsing Naver blog RSS feeds
+ * Handles fetching and parsing Naver blog RSS feeds.
+ * Uses native fetch + regex-based XML parsing (no rss-parser dependency).
  */
 
 import { BlogPost, BlogFeedResponse } from '@/types';
@@ -55,8 +56,69 @@ const FALLBACK_POSTS: BlogPost[] = [
 ];
 
 /**
- * Parse RSS feed using rss-parser
- * This function runs on the server side
+ * Extract value from an XML tag (supports CDATA and plain text)
+ */
+function extractTag(xml: string, tagName: string): string | null {
+  // CDATA format: <tag><![CDATA[value]]></tag>
+  const cdataRegex = new RegExp(
+    `<${tagName}>\\s*<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>\\s*</${tagName}>`, 'i'
+  );
+  const cdataMatch = xml.match(cdataRegex);
+  if (cdataMatch) return cdataMatch[1].trim();
+
+  // Plain format: <tag>value</tag>
+  const plainRegex = new RegExp(`<${tagName}>([\\s\\S]*?)</${tagName}>`, 'i');
+  const plainMatch = xml.match(plainRegex);
+  if (plainMatch) return plainMatch[1].trim();
+
+  return null;
+}
+
+/**
+ * Decode HTML entities
+ */
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
+}
+
+/**
+ * Parse RSS XML into BlogPost array (Edge-compatible, no DOMParser)
+ */
+function parseRssXml(xml: string, limit: number): BlogPost[] {
+  const items: BlogPost[] = [];
+
+  const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+  let match;
+
+  while ((match = itemRegex.exec(xml)) !== null && items.length < limit) {
+    const itemXml = match[1];
+
+    const title = extractTag(itemXml, 'title') || 'Untitled';
+    const link = extractTag(itemXml, 'link') || '#';
+    const pubDate = extractTag(itemXml, 'pubDate') || new Date().toISOString();
+    const content = extractTag(itemXml, 'description') || '';
+
+    items.push({
+      title: decodeHtmlEntities(title),
+      link,
+      pubDate,
+      content,
+      contentSnippet: extractSnippet(content),
+      thumbnail: extractThumbnail(content),
+    });
+  }
+
+  return items;
+}
+
+/**
+ * Fetch and parse Naver blog RSS feed (Edge-compatible)
  */
 export async function fetchNaverBlogPosts(
   blogId?: string,
@@ -64,7 +126,7 @@ export async function fetchNaverBlogPosts(
 ): Promise<BlogFeedResponse> {
   // If no blog ID, return fallback posts
   if (!blogId || blogId === 'your_naver_blog_id') {
-    console.log('📝 Using fallback blog posts (Naver blog not configured)');
+    console.log('Using fallback blog posts (Naver blog not configured)');
     return {
       success: true,
       posts: FALLBACK_POSTS.slice(0, limit),
@@ -72,30 +134,23 @@ export async function fetchNaverBlogPosts(
   }
 
   try {
-    // Dynamically import rss-parser (server-side only)
-    const Parser = (await import('rss-parser')).default;
-    const parser = new Parser({
-      timeout: 10000, // 10 second timeout
+    const rssUrl = NAVER_RSS_URL.replace('{blogId}', blogId);
+    console.log(`Fetching Naver blog RSS: ${rssUrl}`);
+
+    const response = await fetch(rssUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; HotelWebsite/1.0)',
       },
     });
 
-    const rssUrl = NAVER_RSS_URL.replace('{blogId}', blogId);
-    console.log(`📡 Fetching Naver blog RSS: ${rssUrl}`);
+    if (!response.ok) {
+      throw new Error(`RSS fetch failed: ${response.status}`);
+    }
 
-    const feed = await parser.parseURL(rssUrl);
+    const xmlText = await response.text();
+    const posts = parseRssXml(xmlText, limit);
 
-    const posts: BlogPost[] = (feed.items || []).slice(0, limit).map((item) => ({
-      title: item.title || 'Untitled',
-      link: item.link || '#',
-      pubDate: item.pubDate || new Date().toISOString(),
-      content: item.content,
-      contentSnippet: item.contentSnippet || extractSnippet(item.content || ''),
-      thumbnail: extractThumbnail(item.content || ''),
-    }));
-
-    console.log(`✅ Fetched ${posts.length} blog posts`);
+    console.log(`Fetched ${posts.length} blog posts`);
 
     return {
       success: true,
@@ -120,12 +175,7 @@ function extractSnippet(html: string, maxLength = 150): string {
   // Remove HTML tags
   const text = html.replace(/<[^>]*>/g, '');
   // Decode HTML entities
-  const decoded = text
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"');
+  const decoded = decodeHtmlEntities(text);
   // Trim and truncate
   const trimmed = decoded.trim();
   if (trimmed.length <= maxLength) return trimmed;

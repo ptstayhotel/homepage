@@ -8,6 +8,8 @@
  * - Returns a styled HTML confirmation page
  */
 
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { confirmBooking, getBookingByToken } from '@/lib/booking-store';
 import { sendConfirmationEmail } from '@/lib/email';
