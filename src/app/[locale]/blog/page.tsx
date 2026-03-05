@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { createTranslator } from '@/lib/translations';
 import { fetchNaverBlogPosts, getNaverBlogId } from '@/lib/utils/blog';
 import BlogList from '@/components/BlogList';

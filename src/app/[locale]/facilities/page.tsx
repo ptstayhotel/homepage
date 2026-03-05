@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 
 interface PageProps {
     params: { locale: string };

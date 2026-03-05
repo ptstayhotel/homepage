@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 /**
  * Rooms List Page - Seoul Dragon City Style
  *

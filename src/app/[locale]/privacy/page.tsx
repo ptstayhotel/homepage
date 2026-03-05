@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { Locale } from '@/types';
 import { getBrandConfig } from '@/config/brand';
 

@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 /**
  * Booking Page - Seoul Dragon City Style
  *

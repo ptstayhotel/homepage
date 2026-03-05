@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 /**
  * Home Page - Seoul Dragon City Style Layout
  *
