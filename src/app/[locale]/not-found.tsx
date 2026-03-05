@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 /**
  * 404 Not Found Page
  */
