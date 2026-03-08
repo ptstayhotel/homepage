@@ -40,6 +40,17 @@ const ROOM_LABELS: Record<string, string> = {
   'party-suite': '파티 스위트',
 };
 
+// Base prices (Sun–Thu) for fallback when finalAmount is missing (legacy data)
+const ROOM_BASE_PRICES: Record<string, number> = {
+  standard: 70000,
+  'standard-premium': 80000,
+  deluxe: 90000,
+  'family-twin': 100000,
+  'family-triple': 110000,
+  'royal-suite': 150000,
+  'party-suite': 200000,
+};
+
 function formatDateTime(iso: string): string {
   if (!iso) return '-';
   const d = new Date(iso);
@@ -49,6 +60,36 @@ function formatDateTime(iso: string): string {
   const h = String(d.getHours()).padStart(2, '0');
   const min = String(d.getMinutes()).padStart(2, '0');
   return `${y}-${m}-${day} ${h}:${min}`;
+}
+
+function calculateNights(checkIn: string, checkOut: string): number {
+  const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime();
+  return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+/**
+ * Smart currency display:
+ * - military_fixed → "$64 × N nights" (USD)
+ * - KRW finalAmount → "63,000원"
+ * - Missing finalAmount (legacy) → fallback to base price estimate
+ */
+function formatDisplayPrice(b: BookingRecord): { text: string; isFallback: boolean } {
+  // Military fixed rate: always USD
+  if (b.appliedPromo === 'military_fixed') {
+    const nights = calculateNights(b.formData.checkIn, b.formData.checkOut);
+    return { text: `$${64 * nights}`, isFallback: false };
+  }
+  // Has finalAmount from frontend → KRW with comma
+  if (b.finalAmount != null && b.finalAmount > 0) {
+    return { text: `${b.finalAmount.toLocaleString()}원`, isFallback: false };
+  }
+  // Fallback for legacy data: estimate from base price
+  const basePrice = ROOM_BASE_PRICES[b.formData.roomId];
+  if (basePrice) {
+    const nights = calculateNights(b.formData.checkIn, b.formData.checkOut);
+    return { text: `${(basePrice * nights).toLocaleString()}원`, isFallback: true };
+  }
+  return { text: '-', isFallback: false };
 }
 
 export default function AdminPage() {
@@ -164,7 +205,7 @@ export default function AdminPage() {
                 <th className="px-4 py-3 font-medium whitespace-nowrap">인원</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">군인할인</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">방문방법</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">최종금액</th>
+                <th className="px-4 py-3 font-medium whitespace-nowrap">결제예정금액</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">프로모션</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">정책동의</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">요청사항</th>
@@ -204,8 +245,14 @@ export default function AdminPage() {
                   <td className="px-4 py-3 text-center whitespace-nowrap text-slate-600">
                     {b.formData.transportation === 'car' ? '차량' : '도보'}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right font-medium text-slate-700">
-                    {b.finalAmount != null ? `${b.finalAmount.toLocaleString()}원` : <span className="text-slate-400">-</span>}
+                  <td className="px-4 py-3 whitespace-nowrap text-right font-medium">
+                    {(() => {
+                      const { text, isFallback } = formatDisplayPrice(b);
+                      if (text === '-') return <span className="text-slate-400">-</span>;
+                      if (b.appliedPromo === 'military_fixed') return <span className="text-blue-700 font-bold">{text}</span>;
+                      if (isFallback) return <span className="text-slate-400" title="finalAmount 미저장 (추정치)">{text} <span className="text-[10px]">(추정)</span></span>;
+                      return <span className="text-slate-700">{text}</span>;
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">
                     {b.appliedPromo ? (
