@@ -45,10 +45,10 @@ const ROOM_BASE_PRICES: Record<string, number> = {
   standard: 70000,
   'standard-premium': 80000,
   deluxe: 90000,
-  'family-twin': 100000,
-  'family-triple': 110000,
-  'royal-suite': 150000,
-  'party-suite': 200000,
+  'family-twin': 90000,
+  'family-triple': 120000,
+  'royal-suite': 140000,
+  'party-suite': 170000,
 };
 
 function formatDateTime(iso: string): string {
