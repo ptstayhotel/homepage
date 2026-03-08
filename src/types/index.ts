@@ -62,7 +62,7 @@ export interface BookingFormData {
   guestPhone: string;
   specialRequests?: string;
   agreedToPolicy: boolean;
-  appliedPromo?: 'longstay_10' | 'longstay_15' | null;
+  appliedPromo?: 'longstay_10' | 'longstay_15' | 'military_fixed' | null;
 }
 
 export interface BookingResponse {

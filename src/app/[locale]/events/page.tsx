@@ -207,6 +207,14 @@ export default function EventsPage({ params }: EventsPageProps) {
                                         {{ ko: '이 혜택으로 예약하기', en: 'Book with this offer', ja: 'この特典で予約する', zh: '以此优惠预订' }[locale]}
                                     </a>
                                 )}
+                                {selectedOffer.id === 4 && (
+                                    <a
+                                        href="/en/booking?promo=military"
+                                        className="inline-block px-10 py-3 bg-accent-500 text-primary-900 text-sm font-bold tracking-widest uppercase transition-all duration-300 hover:bg-primary-900 hover:text-white"
+                                    >
+                                        US Military Special — Book Now
+                                    </a>
+                                )}
                                 <button
                                     onClick={() => setSelectedOffer(null)}
                                     className="px-10 py-3 bg-primary-900 text-white text-sm tracking-widest uppercase transition-all duration-300 hover:bg-accent-500"

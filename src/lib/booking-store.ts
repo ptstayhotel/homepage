@@ -22,7 +22,7 @@ export interface StoredBooking {
   createdAt: string;
   confirmedAt?: string;
   agreedAt: string; // ISO timestamp — legal proof of cancellation policy agreement
-  appliedPromo?: 'longstay_10' | 'longstay_15' | null;
+  appliedPromo?: 'longstay_10' | 'longstay_15' | 'military_fixed' | null;
 }
 
 /**

@@ -204,8 +204,10 @@ export default function AdminPage() {
                   </td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">
                     {b.appliedPromo ? (
-                      <span className="inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-purple-100 text-purple-800">
-                        {b.appliedPromo === 'longstay_15' ? '연박15%' : b.appliedPromo === 'longstay_10' ? '연박10%' : b.appliedPromo}
+                      <span className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
+                        b.appliedPromo === 'military_fixed' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {b.appliedPromo === 'military_fixed' ? 'Military $64' : b.appliedPromo === 'longstay_15' ? '연박15%' : b.appliedPromo === 'longstay_10' ? '연박10%' : b.appliedPromo}
                       </span>
                     ) : <span className="text-slate-400">-</span>}
                   </td>
