@@ -14,7 +14,19 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 
-const ADMIN_PASSWORD = 'ptstay2026!';
+function getAdminPassword(): string {
+  // Cloudflare Pages: env vars via getRequestContext().env
+  try {
+    const ctx = getRequestContext();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pw = (ctx.env as any).ADMIN_PASSWORD as string | undefined;
+    if (pw) return pw;
+  } catch {
+    // local dev — fall through
+  }
+  // Fallback: process.env (next dev / .env.local)
+  return process.env.ADMIN_PASSWORD || '';
+}
 
 interface KVLike {
   get(key: string): Promise<string | null>;
@@ -55,9 +67,10 @@ function getStore(): KVLike {
 }
 
 export async function GET(request: NextRequest) {
-  // --- Auth gate (server-side) ---
+  // --- Auth gate (server-side, env var) ---
   const key = request.headers.get('X-Admin-Key');
-  if (key !== ADMIN_PASSWORD) {
+  const adminPassword = getAdminPassword();
+  if (!adminPassword || key !== adminPassword) {
     return NextResponse.json(
       { success: false, error: 'Unauthorized' },
       { status: 401 }
