@@ -117,9 +117,9 @@ export default function AdminPage() {
 
   // --- Dashboard ---
   return (
-    <div className="min-h-screen bg-neutral-100">
+    <div className="min-h-screen pt-32 pb-12 px-4 bg-gray-50">
       {/* Header */}
-      <div className="bg-neutral-900 text-white px-6 py-4 flex items-center justify-between">
+      <div className="bg-neutral-900 text-white px-6 py-4 flex items-center justify-between rounded-lg">
         <div>
           <h1 className="text-base font-bold tracking-wider">STAY HOTEL ADMIN</h1>
           <p className="text-xs text-neutral-400">예약 관리 대시보드</p>
@@ -143,13 +143,13 @@ export default function AdminPage() {
       </div>
 
       {/* Table */}
-      <div className="p-4 overflow-x-auto">
+      <div className="mt-4 overflow-x-auto bg-white shadow-md rounded-lg">
         {bookings.length === 0 ? (
-          <div className="bg-white p-12 text-center text-neutral-500 text-sm">
+          <div className="p-12 text-center text-neutral-500 text-sm">
             예약 내역이 없습니다.
           </div>
         ) : (
-          <table className="w-full bg-white text-xs border border-neutral-300 border-collapse">
+          <table className="w-full text-xs border-collapse min-w-[1100px]">
             <thead>
               <tr className="bg-neutral-800 text-white text-left">
                 <th className="px-3 py-2 border border-neutral-600 font-medium whitespace-nowrap">상태</th>
