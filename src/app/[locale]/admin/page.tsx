@@ -14,6 +14,7 @@ interface BookingRecord {
   status: 'pending' | 'confirmed';
   createdAt: string;
   agreedAt?: string;
+  appliedPromo?: string | null;
   formData: {
     roomId: string;
     checkIn: string;
@@ -163,6 +164,7 @@ export default function AdminPage() {
                 <th className="px-3 py-2 border border-neutral-600 font-medium whitespace-nowrap">인원</th>
                 <th className="px-3 py-2 border border-neutral-600 font-medium whitespace-nowrap">군인할인</th>
                 <th className="px-3 py-2 border border-neutral-600 font-medium whitespace-nowrap">방문방법</th>
+                <th className="px-3 py-2 border border-neutral-600 font-medium whitespace-nowrap">프로모션</th>
                 <th className="px-3 py-2 border border-neutral-600 font-medium whitespace-nowrap">정책동의</th>
                 <th className="px-3 py-2 border border-neutral-600 font-medium whitespace-nowrap">요청사항</th>
               </tr>
@@ -200,6 +202,13 @@ export default function AdminPage() {
                   </td>
                   <td className="px-3 py-2 border border-neutral-200 text-center whitespace-nowrap">
                     {b.formData.transportation === 'car' ? '차량' : '도보'}
+                  </td>
+                  <td className="px-3 py-2 border border-neutral-200 text-center whitespace-nowrap">
+                    {b.appliedPromo ? (
+                      <span className="inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800">
+                        {b.appliedPromo === 'longstay_15' ? '연박15%' : b.appliedPromo === 'longstay_10' ? '연박10%' : b.appliedPromo}
+                      </span>
+                    ) : <span className="text-neutral-400">-</span>}
                   </td>
                   <td className="px-3 py-2 border border-neutral-200 whitespace-nowrap">
                     {b.agreedAt ? formatDateTime(b.agreedAt) : '-'}

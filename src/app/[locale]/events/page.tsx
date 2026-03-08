@@ -197,8 +197,16 @@ export default function EventsPage({ params }: EventsPageProps) {
                                 ))}
                             </ul>
 
-                            {/* Close button */}
-                            <div className="mt-8 text-center">
+                            {/* CTA + Close buttons */}
+                            <div className="mt-8 flex flex-col items-center gap-3">
+                                {selectedOffer.id === 1 && (
+                                    <a
+                                        href={`/${locale}/booking?promo=longstay`}
+                                        className="inline-block px-10 py-3 bg-accent-500 text-primary-900 text-sm font-bold tracking-widest uppercase transition-all duration-300 hover:bg-primary-900 hover:text-white"
+                                    >
+                                        {{ ko: '이 혜택으로 예약하기', en: 'Book with this offer', ja: 'この特典で予約する', zh: '以此优惠预订' }[locale]}
+                                    </a>
+                                )}
                                 <button
                                     onClick={() => setSelectedOffer(null)}
                                     className="px-10 py-3 bg-primary-900 text-white text-sm tracking-widest uppercase transition-all duration-300 hover:bg-accent-500"

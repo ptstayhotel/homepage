@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from '@/lib/translations';
 import { Locale, BookingFormData, ReservationType, TransportationType } from '@/types';
 import { rooms, getRoomName, formatPrice, calculateRoomTotal } from '@/config/rooms';
@@ -42,6 +42,10 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
   const t = useTranslations('booking');
   const tErrors = useTranslations('errors');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Long-stay promo — only active when arriving from Events page CTA
+  const isLongstayPromo = searchParams.get('promo') === 'longstay';
 
   // Form state
   const [step, setStep] = useState<FormStep>(initialStep || 'dates');
@@ -77,6 +81,16 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
   // Calculate total price (day-by-day for Fri/Sat rates)
   const nights = calculateNights(formData.checkIn, formData.checkOut);
   const totalPrice = selectedRoom ? calculateRoomTotal(selectedRoom, formData.checkIn, formData.checkOut) : 0;
+
+  // Long-stay promo discount calculation
+  const promoBlocked = isLongstayPromo && formData.reservationType === 'military';
+  const promoDiscount = (() => {
+    if (!isLongstayPromo || promoBlocked) return { rate: 0, label: '' as 'longstay_10' | 'longstay_15' | null, amount: 0 };
+    if (nights >= 7) return { rate: 0.15, label: 'longstay_15' as const, amount: totalPrice - Math.floor(totalPrice * 0.85) };
+    if (nights >= 2) return { rate: 0.10, label: 'longstay_10' as const, amount: totalPrice - Math.floor(totalPrice * 0.90) };
+    return { rate: 0, label: null, amount: 0 };
+  })();
+  const finalPrice = promoDiscount.rate > 0 ? totalPrice - promoDiscount.amount : totalPrice;
 
   // Check if selected dates include Friday or Saturday (weekend surcharge)
   const includesWeekend = (() => {
@@ -183,10 +197,14 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
 
     try {
       // Call API to create booking
+      const payload = {
+        ...formData,
+        appliedPromo: promoDiscount.label || null,
+      };
       const response = await fetch('/api/booking-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
@@ -583,10 +601,32 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                     </span>
                   </span>
                 </div>
+                {/* Long-stay promo discount line */}
+                {isLongstayPromo && promoBlocked && (
+                  <div className="p-3 mb-2 bg-red-50 border border-red-200 text-red-700 text-xs">
+                    {{ ko: '다른 이벤트(미군 특가 등)와 중복 적용할 수 없습니다.', en: 'Cannot combine with other offers (Military Special, etc.).', ja: '他のイベント（米軍特価など）との併用はできません。', zh: '不可与其他优惠（美军特价等）同时使用。' }[locale]}
+                  </div>
+                )}
+                {isLongstayPromo && !promoBlocked && nights < 2 && (
+                  <div className="p-3 mb-2 bg-red-50 border border-red-200 text-red-700 text-xs">
+                    {{ ko: '연박 할인은 최소 2박 이상 예약 시에만 적용됩니다.', en: 'Long-stay discount requires a minimum of 2 nights.', ja: '連泊割引は2泊以上のご予約にのみ適用されます。', zh: '连住折扣仅适用于2晚以上的预订。' }[locale]}
+                  </div>
+                )}
+                {isLongstayPromo && promoDiscount.rate > 0 && (
+                  <div className="flex justify-between mb-2 text-green-700">
+                    <span className="text-sm font-medium">
+                      {nights >= 7
+                        ? { ko: '7박 이상 15% 연박 할인', en: '7+ nights 15% long-stay discount', ja: '7泊以上 15%連泊割引', zh: '7晚以上 15%连住折扣' }[locale]
+                        : { ko: '2박 이상 10% 연박 할인', en: '2+ nights 10% long-stay discount', ja: '2泊以上 10%連泊割引', zh: '2晚以上 10%连住折扣' }[locale]
+                      }
+                    </span>
+                    <span className="font-medium">-{formatCurrency(promoDiscount.amount, locale)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between pt-4 border-t border-neutral-200">
                   <span className="font-medium text-primary-900">{t('total')}</span>
                   <span className="font-serif text-2xl text-accent-500">
-                    {formatCurrency(totalPrice, locale)}
+                    {formatCurrency(finalPrice, locale)}
                   </span>
                 </div>
               </div>
