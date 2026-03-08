@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
 
   // ── Step 2: Send HTML receipt email to guest ──
   // MUST await — Cloudflare kills the isolate when the response is sent.
-  const emailResult = await sendConfirmationEmail(booking.formData, booking.bookingId);
+  const emailResult = await sendConfirmationEmail(booking.formData, booking.bookingId, booking.finalAmount);
 
   if (!emailResult.success) {
     console.error(`[booking-confirm] Email to guest failed for ${booking.bookingId}: ${emailResult.error}`);
@@ -117,8 +117,15 @@ export async function GET(request: NextRequest) {
   const room = getRoomById(data.roomId);
   const roomName = room ? getRoomName(room, 'ko') : data.roomId;
   const nights = calculateNights(data.checkIn, data.checkOut);
-  const totalPrice = room ? calculateRoomTotal(room, data.checkIn, data.checkOut) : 0;
-  const priceText = room ? formatPrice(totalPrice, 'ko') : '-';
+  // Use stored finalAmount (includes discounts) — fall back to base calculation
+  const finalAmount = booking.finalAmount;
+  const basePrice = room ? calculateRoomTotal(room, data.checkIn, data.checkOut) : 0;
+  const displayPrice = finalAmount != null ? finalAmount : basePrice;
+  const priceText = displayPrice > 0 ? formatPrice(displayPrice, 'ko') : '-';
+  const promoLabel = booking.appliedPromo === 'military_fixed' ? 'Military $64'
+    : booking.appliedPromo === 'longstay_15' ? '연박 15%'
+    : booking.appliedPromo === 'longstay_10' ? '연박 10%'
+    : null;
 
   const detailsHtml = `
     <div class="status">CONFIRMED</div>
@@ -129,7 +136,8 @@ export async function GET(request: NextRequest) {
       <div class="row"><span class="label">체크인</span><span class="value">${data.checkIn}</span></div>
       <div class="row"><span class="label">체크아웃</span><span class="value">${data.checkOut} (${nights}박)</span></div>
       <div class="row"><span class="label">방문 방법</span><span class="value">${data.transportation === 'car' ? '차량' : '도보'}</span></div>
-      <div class="row"><span class="label">예상 금액</span><span class="value" style="color: #d4af37;">${priceText}</span></div>
+      ${promoLabel ? `<div class="row"><span class="label">적용 할인</span><span class="value" style="color: #2e7d32;">${promoLabel}</span></div>` : ''}
+      <div class="row"><span class="label">최종 금액</span><span class="value" style="color: #d4af37;">${priceText}</span></div>
     </div>`;
 
   return new NextResponse(

@@ -63,6 +63,7 @@ export interface BookingFormData {
   specialRequests?: string;
   agreedToPolicy: boolean;
   appliedPromo?: 'longstay_10' | 'longstay_15' | 'military_fixed' | null;
+  finalAmount?: number; // Discounted total sent from frontend (KRW)
 }
 
 export interface BookingResponse {

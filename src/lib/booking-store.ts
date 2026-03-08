@@ -23,6 +23,7 @@ export interface StoredBooking {
   confirmedAt?: string;
   agreedAt: string; // ISO timestamp — legal proof of cancellation policy agreement
   appliedPromo?: 'longstay_10' | 'longstay_15' | 'military_fixed' | null;
+  finalAmount?: number; // Discounted total (KRW) — source of truth for emails/admin
 }
 
 /**
@@ -76,6 +77,7 @@ export async function saveBooking(formData: BookingFormData, bookingId: string):
     createdAt: new Date().toISOString(),
     agreedAt: new Date().toISOString(),
     appliedPromo: formData.appliedPromo || null,
+    finalAmount: formData.finalAmount || undefined,
   };
 
   const kvKey = `booking:${booking.token}`;

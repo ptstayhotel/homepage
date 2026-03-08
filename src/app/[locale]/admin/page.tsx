@@ -15,6 +15,7 @@ interface BookingRecord {
   createdAt: string;
   agreedAt?: string;
   appliedPromo?: string | null;
+  finalAmount?: number | null;
   formData: {
     roomId: string;
     checkIn: string;
@@ -149,7 +150,7 @@ export default function AdminPage() {
             예약 내역이 없습니다.
           </div>
         ) : (
-          <table className="w-full text-xs border-collapse min-w-[1100px]">
+          <table className="w-full text-xs border-collapse min-w-[1200px]">
             <thead>
               <tr className="bg-slate-800 text-white text-left">
                 <th className="px-4 py-3 font-medium whitespace-nowrap">상태</th>
@@ -163,6 +164,7 @@ export default function AdminPage() {
                 <th className="px-4 py-3 font-medium whitespace-nowrap">인원</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">군인할인</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">방문방법</th>
+                <th className="px-4 py-3 font-medium whitespace-nowrap">최종금액</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">프로모션</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">정책동의</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">요청사항</th>
@@ -201,6 +203,9 @@ export default function AdminPage() {
                   </td>
                   <td className="px-4 py-3 text-center whitespace-nowrap text-slate-600">
                     {b.formData.transportation === 'car' ? '차량' : '도보'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right font-medium text-slate-700">
+                    {b.finalAmount != null ? `${b.finalAmount.toLocaleString()}원` : <span className="text-slate-400">-</span>}
                   </td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">
                     {b.appliedPromo ? (

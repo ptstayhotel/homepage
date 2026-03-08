@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Send notification to hotel — MUST await before returning response.
     // Cloudflare Edge kills the V8 isolate the moment the response is sent.
-    const emailResult = await sendBookingEmail(body, bookingId, booking.token);
+    const emailResult = await sendBookingEmail(body, bookingId, booking.token, body.finalAmount);
 
     if (!emailResult.success) {
       console.error(`[booking-request] Email failed for ${bookingId}: ${emailResult.error}`);

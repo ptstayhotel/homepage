@@ -204,6 +204,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
       const payload = {
         ...formData,
         appliedPromo: isMilitaryPromo ? 'military_fixed' : (promoDiscount.label || null),
+        finalAmount: finalPrice,
       };
       const response = await fetch('/api/booking-request', {
         method: 'POST',

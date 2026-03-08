@@ -89,18 +89,29 @@ function calculateNights(checkIn: string, checkOut: string): number {
   return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-function getBookingDetails(data: BookingFormData) {
+const PROMO_LABELS: Record<string, { ko: string; en: string }> = {
+  longstay_10: { ko: '연박 10% 할인', en: '10% Long-Stay Discount' },
+  longstay_15: { ko: '연박 15% 할인', en: '15% Long-Stay Discount' },
+  military_fixed: { ko: 'US Military Special ($64 고정)', en: 'US Military Special ($64 Fixed)' },
+};
+
+function getBookingDetails(data: BookingFormData, finalAmount?: number) {
   const room = getRoomById(data.roomId);
   const roomName = room ? getRoomName(room, 'ko') : data.roomId;
   const roomNameEn = room ? getRoomName(room, 'en') : data.roomId;
   const nights = calculateNights(data.checkIn, data.checkOut);
-  const totalPrice = room ? calculateRoomTotal(room, data.checkIn, data.checkOut) : 0;
-  const priceText = room ? formatPrice(totalPrice, 'ko') : '-';
+  const basePrice = room ? calculateRoomTotal(room, data.checkIn, data.checkOut) : 0;
+  // Use finalAmount from frontend (includes discounts) when available; fall back to base calculation
+  const totalPrice = finalAmount != null ? finalAmount : basePrice;
+  const priceText = totalPrice > 0 ? formatPrice(totalPrice, 'ko') : '-';
   const typeLabel = RESERVATION_TYPE_LABELS[data.reservationType]?.ko || data.reservationType;
   const typeLabelEn = RESERVATION_TYPE_LABELS[data.reservationType]?.en || data.reservationType;
   const transportLabel = TRANSPORTATION_LABELS[data.transportation]?.ko || data.transportation || '도보';
   const transportLabelEn = TRANSPORTATION_LABELS[data.transportation]?.en || data.transportation || 'Walk';
-  return { room, roomName, roomNameEn, nights, totalPrice, priceText, typeLabel, typeLabelEn, transportLabel, transportLabelEn };
+  const appliedPromo = data.appliedPromo || null;
+  const promoLabelKo = appliedPromo ? (PROMO_LABELS[appliedPromo]?.ko || appliedPromo) : null;
+  const promoLabelEn = appliedPromo ? (PROMO_LABELS[appliedPromo]?.en || appliedPromo) : null;
+  return { room, roomName, roomNameEn, nights, basePrice, totalPrice, priceText, typeLabel, typeLabelEn, transportLabel, transportLabelEn, appliedPromo, promoLabelKo, promoLabelEn };
 }
 
 /**
@@ -110,11 +121,12 @@ export async function sendBookingEmail(
   data: BookingFormData,
   bookingId: string,
   confirmToken: string,
+  finalAmount?: number,
 ): Promise<{ success: boolean; error?: string }> {
   const brand = getBrandConfig();
   const hotelEmail = brand.contact.email;
   const brandName = brand.name.ko;
-  const { roomName, roomNameEn, nights, priceText, typeLabel, transportLabel } = getBookingDetails(data);
+  const { roomName, roomNameEn, nights, priceText, typeLabel, transportLabel, promoLabelKo } = getBookingDetails(data, finalAmount);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'http://localhost:3000';
   const confirmUrl = `${siteUrl}/api/booking-confirm?token=${confirmToken}`;
@@ -169,9 +181,13 @@ export async function sendBookingEmail(
             <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${transportLabel}</td>
           </tr>
           <tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">예상 금액</td>
+            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">최종 금액</td>
             <td style="padding: 12px 0; font-weight: 600; color: #d4af37; border-bottom: 1px solid #f0f0f0;">${priceText}</td>
           </tr>
+          ${promoLabelKo ? `<tr>
+            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">적용 할인</td>
+            <td style="padding: 12px 0; font-weight: 600; color: #2e7d32; border-bottom: 1px solid #f0f0f0;">${promoLabelKo}</td>
+          </tr>` : ''}
         </table>
         <!-- Guest Info -->
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 24px;">
@@ -248,12 +264,13 @@ export async function sendBookingEmail(
 export async function sendConfirmationEmail(
   data: BookingFormData,
   bookingId: string,
+  finalAmount?: number,
 ): Promise<{ success: boolean; error?: string }> {
   const brand = getBrandConfig();
   const hotelEmail = brand.contact.email;
   const hotelPhone = brand.contact.phone;
   const brandName = brand.name.ko;
-  const { roomName, roomNameEn, nights, priceText, typeLabel, typeLabelEn, transportLabel, transportLabelEn } = getBookingDetails(data);
+  const { roomName, roomNameEn, nights, priceText, typeLabel, typeLabelEn, transportLabel, transportLabelEn, promoLabelKo, promoLabelEn } = getBookingDetails(data, finalAmount);
   const fromEmail = process.env.EMAIL_FROM || 'noreply@pyeongtaekstay.com';
   const confirmedDate = new Date().toISOString().split('T')[0];
 
@@ -375,8 +392,12 @@ export async function sendConfirmationEmail(
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #faf6eb; border: 1px solid #f0e8d0;">
           <tr><td style="padding: 20px 24px;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              ${promoLabelKo ? `<tr>
+                <td style="font-family: ${FONT_STACK}; font-size: 12px; color: #2e7d32; padding-bottom: 8px;">적용 할인 / Discount</td>
+                <td align="right" style="font-family: ${FONT_STACK}; font-size: 12px; font-weight: 600; color: #2e7d32; padding-bottom: 8px;">${promoLabelKo} / ${promoLabelEn}</td>
+              </tr>` : ''}
               <tr>
-                <td style="font-family: ${FONT_STACK}; font-size: 13px; color: #888888; vertical-align: middle;">예상 금액 / Est. Total</td>
+                <td style="font-family: ${FONT_STACK}; font-size: 13px; color: #888888; vertical-align: middle;">최종 금액 / Total Due</td>
                 <td align="right" style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: 700; color: #d4af37; letter-spacing: 1px;">${priceText}</td>
               </tr>
             </table>
