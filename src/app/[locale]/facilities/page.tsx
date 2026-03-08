@@ -82,6 +82,9 @@ export default async function FacilitiesPage({ params }: PageProps) {
                         </div>
                     ))}
                 </div>
+                <p className="text-xs text-neutral-500 mt-4 text-right w-full">
+                    {{ ko: '* 본 부대시설 이미지는 이해를 돕기 위한 연출 컷으로 실제 운영 중인 시설의 형태와 다를 수 있습니다.', en: '* Notice: Facility images are conceptual renderings. Actual amenities are available but may vary in appearance.', ja: '* 本施設の画像はイメージです。実際に運営中の施設と外観が異なる場合があります。', zh: '* 本设施图片为概念效果图。实际设施已投入运营，但外观可能有所不同。' }[loc]}
+                </p>
             </div>
         </div>
     );
