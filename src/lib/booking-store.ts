@@ -31,7 +31,7 @@ export interface StoredBooking {
  */
 interface KVLike {
   get(key: string): Promise<string | null>;
-  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  put(key: string, value: string): Promise<void>;
 }
 
 // In-memory fallback for local development (next dev)
@@ -41,7 +41,7 @@ const memoryFallback: KVLike = {
   async put(key: string, value: string) { memoryStore.set(key, value); },
 };
 
-const KV_TTL = 60 * 60 * 24 * 30; // 30 days
+// DATA RETENTION POLICY: Indefinite (Updated 2026-03-09)
 
 /**
  * Get KV store — Cloudflare KV in production, in-memory in local dev
@@ -84,7 +84,7 @@ export async function saveBooking(formData: BookingFormData, bookingId: string):
   const kv = getStore();
 
   console.log(`[BookingStore] PUT key="${kvKey}" | bookingId=${bookingId}`);
-  await kv.put(kvKey, JSON.stringify(booking), { expirationTtl: KV_TTL });
+  await kv.put(kvKey, JSON.stringify(booking));
 
   // Verify write — immediate read-back
   const verify = await kv.get(kvKey);
@@ -140,7 +140,7 @@ export async function confirmBooking(token: string): Promise<StoredBooking | nul
   booking.status = 'confirmed';
   booking.confirmedAt = new Date().toISOString();
 
-  await kv.put(kvKey, JSON.stringify(booking), { expirationTtl: KV_TTL });
+  await kv.put(kvKey, JSON.stringify(booking));
 
   console.log(`[BookingStore] ✅ Confirmed: ${booking.bookingId} | token: ${token}`);
   return booking;
