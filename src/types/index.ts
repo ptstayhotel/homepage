@@ -61,6 +61,7 @@ export interface BookingFormData {
   guestEmail: string;
   guestPhone: string;
   specialRequests?: string;
+  agreedToPolicy: boolean;
 }
 
 export interface BookingResponse {

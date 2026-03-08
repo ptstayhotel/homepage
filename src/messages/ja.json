@@ -130,7 +130,10 @@
     "bookingId": "予約受付番号（承認待ち）",
     "bookingPendingNotice": "予約リクエストを受け付けましたが、まだ確定されていません。管理者が確認後、確定メールをお送りいたします。",
     "backToHome": "ホームに戻る",
-    "makeAnotherBooking": "別の客室を予約する"
+    "makeAnotherBooking": "別の客室を予約する",
+    "agreeCancellationPolicy": "[必須] キャンセル・返金規定に同意します",
+    "cancellationPolicySummary": "ノーショーおよび当日キャンセルの場合、違約金が発生する場合があります。お支払いはフロントデスクにて現地決済となります。",
+    "policyAgreementRequired": "キャンセル・返金規定に同意してください"
   },
   "footer": {
     "address": "住所",

@@ -130,7 +130,10 @@
     "bookingId": "Request Number (Pending)",
     "bookingPendingNotice": "Your reservation request has been received but is NOT confirmed yet. We will send you a confirmation email once the administrator approves your request.",
     "backToHome": "Back to Home",
-    "makeAnotherBooking": "Book Another Room"
+    "makeAnotherBooking": "Book Another Room",
+    "agreeCancellationPolicy": "[Required] I agree to the Cancellation & Refund Policy",
+    "cancellationPolicySummary": "Penalties may apply for no-shows and same-day cancellations. Payment is processed on-site at the front desk.",
+    "policyAgreementRequired": "You must agree to the cancellation and refund policy"
   },
   "footer": {
     "address": "Address",

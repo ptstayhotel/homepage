@@ -21,6 +21,7 @@ export interface StoredBooking {
   formData: BookingFormData;
   createdAt: string;
   confirmedAt?: string;
+  agreedAt: string; // ISO timestamp — legal proof of cancellation policy agreement
 }
 
 /**
@@ -72,6 +73,7 @@ export async function saveBooking(formData: BookingFormData, bookingId: string):
     status: 'pending',
     formData,
     createdAt: new Date().toISOString(),
+    agreedAt: new Date().toISOString(),
   };
 
   const kvKey = `booking:${booking.token}`;

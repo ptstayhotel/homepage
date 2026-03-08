@@ -61,6 +61,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
     guestEmail: '',
     guestPhone: '',
     specialRequests: '',
+    agreedToPolicy: false,
   });
 
   // If preselected room, skip to info step
@@ -173,6 +174,10 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
 
   // Submit booking
   const handleSubmit = async () => {
+    if (!formData.agreedToPolicy) {
+      setError(t('policyAgreementRequired'));
+      return;
+    }
     setIsSubmitting(true);
     setError('');
 
@@ -590,6 +595,27 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
             <div className="p-4 bg-primary-50 border-l-2 border-primary-900">
               <p className="text-primary-900 text-sm">{t('paymentNote')}</p>
             </div>
+
+            {/* Cancellation Policy Agreement */}
+            <div className="p-4 bg-amber-50 border border-amber-200">
+              <p className="text-neutral-600 text-sm leading-relaxed mb-4">
+                {t('cancellationPolicySummary')}
+              </p>
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={formData.agreedToPolicy}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, agreedToPolicy: e.target.checked }));
+                    setError('');
+                  }}
+                  className="mt-0.5 w-5 h-5 accent-primary-900 flex-shrink-0"
+                />
+                <span className="text-sm font-medium text-primary-900">
+                  {t('agreeCancellationPolicy')}
+                </span>
+              </label>
+            </div>
           </div>
         )}
 
@@ -645,6 +671,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                     guestEmail: '',
                     guestPhone: '',
                     specialRequests: '',
+                    agreedToPolicy: false,
                   });
                 }}
                 className="px-8 py-4 bg-primary-900 text-white text-sm tracking-widest uppercase transition-all duration-300 hover:bg-accent-500"
@@ -672,8 +699,8 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
             {step === 'confirm' ? (
               <button
                 onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="px-10 py-4 bg-accent-500 text-primary-900 text-sm tracking-widest uppercase transition-all duration-300 hover:bg-primary-900 hover:text-white disabled:opacity-50"
+                disabled={isSubmitting || !formData.agreedToPolicy}
+                className="px-10 py-4 bg-accent-500 text-primary-900 text-sm tracking-widest uppercase transition-all duration-300 hover:bg-primary-900 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting
                   ? ({ ko: '처리 중...', en: 'Processing...', ja: '処理中...', zh: '处理中...' }[locale])

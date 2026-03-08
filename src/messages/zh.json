@@ -130,7 +130,10 @@
     "bookingId": "预订受理编号（待审批）",
     "bookingPendingNotice": "您的预订请求已受理，但尚未确认。管理员审核后将发送确认邮件。",
     "backToHome": "返回首页",
-    "makeAnotherBooking": "预订其他客房"
+    "makeAnotherBooking": "预订其他客房",
+    "agreeCancellationPolicy": "[必填] 我同意取消及退款政策",
+    "cancellationPolicySummary": "未入住(No-Show)及当天取消可能会产生违约金。付款在前台现场进行。",
+    "policyAgreementRequired": "请同意取消及退款政策"
   },
   "footer": {
     "address": "地址",

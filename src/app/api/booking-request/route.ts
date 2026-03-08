@@ -35,6 +35,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate cancellation policy agreement (legal requirement)
+    if (body.agreedToPolicy !== true) {
+      return NextResponse.json(
+        { success: false, error: 'You must agree to the cancellation policy' },
+        { status: 400 }
+      );
+    }
+
     // Generate booking ID
     const bookingId = 'BK-' + Date.now().toString(36).toUpperCase();
 
