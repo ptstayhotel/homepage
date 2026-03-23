@@ -7,7 +7,7 @@
  * Displays all bookings in a dense spreadsheet-style table.
  */
 
-import { useState, useCallback, Fragment } from 'react';
+import { useState, useCallback, useEffect, Fragment } from 'react';
 
 interface PricingSnapshot {
   baseAmount: number;
@@ -46,6 +46,48 @@ interface BookingRecord {
 }
 
 type StatusFilter = 'all' | 'pending' | 'confirmed' | 'cancelled';
+type AnalyticsPeriod = '24h' | '7d' | '30d';
+
+interface AnalyticsData {
+  kpi: { requests: number; pageViews: number; bytes: number; uniques: number };
+  chart: { time: string; requests: number }[];
+  topUrls: { path: string; count: number }[];
+}
+
+function formatNum(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString();
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toFixed(1)} GB`;
+  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
+  if (bytes >= 1_024) return `${(bytes / 1_024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
+/**
+ * 시간대별 데이터를 차트 바로 집계
+ * 24h → 시간별, 7d/30d → 일별
+ */
+function aggregateChart(data: { time: string; requests: number }[], period: string): { label: string; value: number }[] {
+  if (period === '24h') {
+    return data.map(d => ({
+      label: new Date(d.time).toLocaleTimeString('ko', { hour: '2-digit', hour12: false }),
+      value: d.requests,
+    }));
+  }
+  const daily = new Map<string, number>();
+  for (const d of data) {
+    const day = d.time.slice(0, 10);
+    daily.set(day, (daily.get(day) || 0) + d.requests);
+  }
+  return Array.from(daily.entries()).map(([day, value]) => ({
+    label: day.slice(5),
+    value,
+  }));
+}
 
 const ROOM_LABELS: Record<string, string> = {
   standard: '스탠다드',
@@ -149,6 +191,13 @@ export default function AdminPage() {
   const [cancellingToken, setCancellingToken] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // --- Cloudflare 통계 ---
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<AnalyticsPeriod>('24h');
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState('');
+  const [analyticsOpen, setAnalyticsOpen] = useState(true);
+
   const fetchBookings = useCallback(async (pw: string) => {
     setLoading(true);
     setError('');
@@ -170,6 +219,35 @@ export default function AdminPage() {
       setLoading(false);
     }
   }, []);
+
+  const fetchAnalytics = useCallback(async (pw: string, period: AnalyticsPeriod) => {
+    setAnalyticsLoading(true);
+    setAnalyticsError('');
+    try {
+      const res = await fetch(`/api/admin/cloudflare-analytics?period=${period}`, {
+        headers: { 'X-Admin-Key': pw },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setAnalyticsError(data.error || '통계 로드 실패');
+        setAnalyticsData(null);
+        return;
+      }
+      setAnalyticsData({ kpi: data.kpi, chart: data.chart, topUrls: data.topUrls });
+    } catch {
+      setAnalyticsError('통계 서버 연결 실패');
+      setAnalyticsData(null);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, []);
+
+  // 로그인 성공 후 또는 기간 변경 시 통계 fetch
+  useEffect(() => {
+    if (authenticated && password) {
+      fetchAnalytics(password, analyticsPeriod);
+    }
+  }, [authenticated, analyticsPeriod, password, fetchAnalytics]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -274,6 +352,111 @@ export default function AdminPage() {
             로그아웃
           </button>
         </div>
+      </div>
+
+      {/* ============================================ */}
+      {/* Cloudflare 사이트 통계 (접이식)             */}
+      {/* ============================================ */}
+      <div className="bg-white border border-slate-200 shadow-sm rounded-xl mt-3 overflow-hidden">
+        {/* 토글 바 */}
+        <button
+          onClick={() => setAnalyticsOpen(prev => !prev)}
+          className="w-full px-6 py-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+            <span className="text-sm font-medium text-slate-700">사이트 통계</span>
+            {analyticsLoading && <span className="text-[10px] text-slate-400 animate-pulse">로딩...</span>}
+          </div>
+          <div className="flex items-center gap-3">
+            {/* 기간 선택 (토글 바 안에 배치) */}
+            {analyticsOpen && (
+              <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                {(['24h', '7d', '30d'] as AnalyticsPeriod[]).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setAnalyticsPeriod(p)}
+                    className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                      analyticsPeriod === p ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
+            <svg className={`w-4 h-4 text-slate-400 transition-transform ${analyticsOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          </div>
+        </button>
+
+        {/* 통계 본문 */}
+        {analyticsOpen && (
+          <div className="px-6 pb-5 border-t border-slate-100">
+            {analyticsError ? (
+              <p className="text-xs text-slate-400 py-4 text-center">{analyticsError}</p>
+            ) : !analyticsData ? (
+              <p className="text-xs text-slate-400 py-4 text-center animate-pulse">통계 로딩 중...</p>
+            ) : (
+              <>
+                {/* KPI 카드 4개 */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                  {[
+                    { label: 'Requests', value: formatNum(analyticsData.kpi.requests), sub: analyticsPeriod },
+                    { label: 'Page Views', value: formatNum(analyticsData.kpi.pageViews), sub: analyticsPeriod },
+                    { label: 'Visitors', value: formatNum(analyticsData.kpi.uniques), sub: 'unique' },
+                    { label: 'Bandwidth', value: formatBytes(analyticsData.kpi.bytes), sub: 'transfer' },
+                  ].map(({ label, value, sub }) => (
+                    <div key={label} className="bg-slate-50 rounded-lg px-4 py-3">
+                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">{label}</div>
+                      <div className="text-lg font-bold text-slate-800 mt-0.5">{value}</div>
+                      <div className="text-[10px] text-slate-400">{sub}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 요청 추이 바 차트 */}
+                {analyticsData.chart.length > 0 && (() => {
+                  const bars = aggregateChart(analyticsData.chart, analyticsPeriod);
+                  const maxVal = Math.max(...bars.map(b => b.value), 1);
+                  return (
+                    <div className="mt-4">
+                      <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-2">Requests 추이</div>
+                      <div className="flex items-end gap-[2px] h-20">
+                        {bars.map((bar, i) => (
+                          <div
+                            key={i}
+                            className="flex-1 bg-blue-400 rounded-t-sm min-w-[2px] hover:bg-blue-500 transition-colors"
+                            style={{ height: `${Math.max((bar.value / maxVal) * 100, 1)}%` }}
+                            title={`${bar.label}: ${bar.value.toLocaleString()}`}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span className="text-[9px] text-slate-400">{bars[0]?.label}</span>
+                        <span className="text-[9px] text-slate-400">{bars[bars.length - 1]?.label}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Top URLs */}
+                {analyticsData.topUrls.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-2">Top URLs</div>
+                    <div className="space-y-1">
+                      {analyticsData.topUrls.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs">
+                          <span className="text-slate-600 truncate max-w-[70%]">{item.path}</span>
+                          <span className="text-slate-400 font-mono">{item.count.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 상태 필터 */}
