@@ -196,7 +196,7 @@ export default function AdminPage() {
   const [analyticsPeriod, setAnalyticsPeriod] = useState<AnalyticsPeriod>('24h');
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState('');
-  const [analyticsOpen, setAnalyticsOpen] = useState(true);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
   const fetchBookings = useCallback(async (pw: string) => {
     setLoading(true);
