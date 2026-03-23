@@ -1,9 +1,8 @@
 /**
  * Booking Cancel API Route
  *
- * POST /api/booking-cancel
- * Body: { token, reason?, cancelledBy? }
- * Header: X-Admin-Key (관리자 인증)
+ * GET  /api/booking-cancel?token=xxx  — 이메일 원클릭 취소 (token 기반, 인증 불필요)
+ * POST /api/booking-cancel            — admin 대시보드 취소 (X-Admin-Key 인증)
  *
  * 상태 전이 규칙:
  * - pending → cancelled ✅
@@ -19,6 +18,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { cancelBooking, getBookingByToken } from '@/lib/booking-store';
 import { sendCancellationEmail } from '@/lib/email';
+import { getRoomById, getRoomName } from '@/config/rooms';
 
 function getAdminPassword(): string {
   try {
@@ -115,4 +115,121 @@ export async function POST(request: NextRequest) {
     bookingId: booking.bookingId,
     alreadyCancelled: false,
   });
+}
+
+// ========================================
+// GET — 이메일 원클릭 취소 (token 기반)
+// booking-confirm GET과 대칭 구조
+// ========================================
+
+function htmlPage(title: string, message: string, details?: string, isError = false) {
+  const statusColor = isError ? '#dc2626' : '#dc2626';
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} - STAY HOTEL</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .card { background: white; max-width: 500px; width: 90%; padding: 48px; text-align: center; box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
+    .logo { color: #d4af37; font-size: 14px; letter-spacing: 3px; margin-bottom: 32px; }
+    h1 { font-size: 22px; color: #1a1a2e; margin-bottom: 12px; }
+    p { font-size: 14px; color: #666; line-height: 1.6; }
+    .details { margin-top: 24px; padding: 20px; background: #f9f9f9; text-align: left; font-size: 13px; color: #444; }
+    .details .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .details .row:last-child { border-bottom: none; }
+    .details .label { color: #888; }
+    .details .value { font-weight: 600; }
+    .status { display: inline-block; margin-top: 16px; padding: 6px 16px; background: #fef2f2; color: ${statusColor}; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">STAY HOTEL</div>
+    <h1>${title}</h1>
+    <p>${message}</p>
+    ${details || ''}
+  </div>
+</body>
+</html>`;
+}
+
+export async function GET(request: NextRequest) {
+  const token = request.nextUrl.searchParams.get('token');
+
+  console.log(`[booking-cancel-GET] Received request | token: ${token || '(none)'}`);
+
+  // token 없음
+  if (!token) {
+    return new NextResponse(
+      htmlPage('잘못된 요청', '유효하지 않은 링크입니다.', undefined, true),
+      { status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
+  }
+
+  // 예약 조회
+  const existing = await getBookingByToken(token);
+  if (!existing) {
+    return new NextResponse(
+      htmlPage('예약을 찾을 수 없습니다', '유효하지 않거나 만료된 링크입니다.', undefined, true),
+      { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
+  }
+
+  // 이미 취소된 경우 — idempotent
+  if (existing.status === 'cancelled') {
+    return new NextResponse(
+      htmlPage('이미 취소된 예약입니다', `예약번호 ${existing.bookingId}는 이미 취소 처리되었습니다.`),
+      { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
+  }
+
+  // 취소 처리
+  const { booking } = await cancelBooking(token, '이메일 링크를 통한 취소', 'hotel');
+  if (!booking) {
+    return new NextResponse(
+      htmlPage('오류 발생', '예약 취소 처리 중 오류가 발생했습니다.', undefined, true),
+      { status: 500, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
+  }
+
+  // 고객에게 취소 이메일 발송
+  const emailResult = await sendCancellationEmail(
+    booking.formData,
+    booking.bookingId,
+    booking.cancelledAt || new Date().toISOString(),
+    booking.finalAmount,
+  );
+
+  if (!emailResult.success) {
+    console.error(`[booking-cancel-GET] 취소 이메일 발송 실패: ${booking.bookingId}: ${emailResult.error}`);
+  } else {
+    console.log(`[booking-cancel-GET] 취소 이메일 발송 완료: ${booking.bookingId}`);
+  }
+
+  // 결과 페이지
+  const data = booking.formData;
+  const room = getRoomById(data.roomId);
+  const roomName = room ? getRoomName(room, 'ko') : data.roomId;
+
+  const detailsHtml = `
+    <div class="status">CANCELLED</div>
+    <div class="details">
+      <div class="row"><span class="label">예약번호</span><span class="value">${booking.bookingId}</span></div>
+      <div class="row"><span class="label">고객명</span><span class="value">${data.guestName}</span></div>
+      <div class="row"><span class="label">객실</span><span class="value">${roomName}</span></div>
+      <div class="row"><span class="label">체크인</span><span class="value">${data.checkIn}</span></div>
+      <div class="row"><span class="label">체크아웃</span><span class="value">${data.checkOut}</span></div>
+    </div>`;
+
+  return new NextResponse(
+    htmlPage(
+      '예약이 취소되었습니다',
+      `고객(${data.guestEmail})에게 취소 이메일이 발송되었습니다.`,
+      detailsHtml
+    ),
+    { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+  );
 }

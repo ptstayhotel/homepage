@@ -21,6 +21,7 @@
  */
 
 import { BookingFormData } from '@/types';
+import { PricingSnapshot } from '@/lib/booking-store';
 import { getRoomById, getRoomName, formatPrice, calculateRoomTotal, calculateExtraGuestFee, getExtraGuestCount } from '@/config/rooms';
 import { getBrandConfig } from '@/config/brand';
 
@@ -120,23 +121,43 @@ function getBookingDetails(data: BookingFormData, finalAmount?: number) {
 }
 
 /**
- * Phase 1: Send booking notification to HOTEL ONLY (with confirm button)
+ * Phase 1: Send booking notification to HOTEL ONLY
+ * - PricingSnapshot 기반 breakdown (서버 계산 snapshot)
+ * - 확정 + 취소 버튼 2개
  */
 export async function sendBookingEmail(
   data: BookingFormData,
   bookingId: string,
   confirmToken: string,
-  finalAmount?: number,
+  pricing: PricingSnapshot,
 ): Promise<{ success: boolean; error?: string }> {
   const brand = getBrandConfig();
   const hotelEmail = brand.contact.email;
   const brandName = brand.name.ko;
-  const { roomName, roomNameEn, nights, basePrice, basePriceText, extraGuestCount, extraGuestFee, extraFeeText, priceText, typeLabel, transportLabel, promoLabelKo } = getBookingDetails(data, finalAmount);
+
+  const room = getRoomById(data.roomId);
+  const roomName = room ? getRoomName(room, 'ko') : data.roomId;
+  const roomNameEn = room ? getRoomName(room, 'en') : data.roomId;
+  const typeLabel = RESERVATION_TYPE_LABELS[data.reservationType]?.ko || data.reservationType;
+  const transportLabel = TRANSPORTATION_LABELS[data.transportation]?.ko || data.transportation || '도보';
+  const promoLabelKo = data.appliedPromo ? (PROMO_LABELS[data.appliedPromo]?.ko || data.appliedPromo) : null;
+  const isMilitary = data.appliedPromo === 'military_fixed';
+
+  // snapshot 기반 가격 텍스트
+  const basePriceText = formatPrice(pricing.baseAmount, 'ko');
+  const extraFeeText = pricing.extraGuestFeeTotal > 0 ? formatPrice(pricing.extraGuestFeeTotal, 'ko') : null;
+  const discountText = pricing.discountAmount > 0 ? formatPrice(pricing.discountAmount, 'ko') : null;
+  const finalText = isMilitary ? `$${pricing.finalAmount}` : formatPrice(pricing.finalAmount, 'ko');
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'http://localhost:3000';
   const confirmUrl = `${siteUrl}/api/booking-confirm?token=${confirmToken}`;
-  console.log(`[Email] Confirm URL generated: ${confirmUrl}`);
+  const cancelUrl = `${siteUrl}/api/booking-cancel?token=${confirmToken}`;
+  console.log(`[Email] Confirm URL: ${confirmUrl}`);
+  console.log(`[Email] Cancel URL: ${cancelUrl}`);
   const fromEmail = process.env.EMAIL_FROM || 'noreply@pyeongtaekstay.com';
+
+  const ROW = (label: string, value: string, color = '#1a1a2e') =>
+    `<tr><td style="padding: 12px 0; color: #888888; width: 120px; border-bottom: 1px solid #f0f0f0;">${label}</td><td style="padding: 12px 0; font-weight: 600; color: ${color}; border-bottom: 1px solid #f0f0f0;">${value}</td></tr>`;
 
   const hotelHtml = `<!DOCTYPE html>
 <html lang="ko">
@@ -148,9 +169,7 @@ export async function sendBookingEmail(
       <!-- Header -->
       <tr><td style="background-color: #1a1a2e; padding: 24px 32px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-          <tr>
-            <td style="color: #d4af37; font-family: ${FONT_STACK}; font-size: 18px; font-weight: 700; letter-spacing: 2px;">${brandName}</td>
-          </tr>
+          <tr><td style="color: #d4af37; font-family: ${FONT_STACK}; font-size: 18px; font-weight: 700; letter-spacing: 2px;">${brandName}</td></tr>
         </table>
       </td></tr>
       <!-- Body -->
@@ -159,84 +178,62 @@ export async function sendBookingEmail(
           <tr><td style="font-family: ${FONT_STACK}; font-size: 20px; font-weight: 700; color: #1a1a2e; padding-bottom: 24px;">새 예약 접수</td></tr>
           <tr><td style="font-family: ${FONT_STACK}; font-size: 13px; color: #888888; padding-bottom: 16px;">예약번호: <strong style="color: #1a1a2e;">${bookingId}</strong></td></tr>
         </table>
-        <!-- Booking Info Table -->
+        <!-- 예약 정보 -->
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: ${FONT_STACK}; font-size: 14px;">
-          <tr style="border-bottom: 1px solid #f0f0f0;">
-            <td style="padding: 12px 0; color: #888888; width: 120px; border-bottom: 1px solid #f0f0f0;">객실</td>
-            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${roomName} (${roomNameEn})</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">체크인</td>
-            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${data.checkIn}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">체크아웃</td>
-            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${data.checkOut} (${nights}박)</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">인원</td>
-            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${data.guestCount}명</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">예약 유형</td>
-            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${typeLabel}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">방문 방법</td>
-            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${transportLabel}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">객실 요금</td>
-            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${basePriceText} (${nights}박)</td>
-          </tr>
-          ${extraGuestFee > 0 ? `<tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">추가 인원</td>
-            <td style="padding: 12px 0; font-weight: 600; color: #e65100; border-bottom: 1px solid #f0f0f0;">+${extraFeeText} (${extraGuestCount}명 × ${nights}박 × ₩10,000/인/박)</td>
-          </tr>` : ''}
-          ${promoLabelKo ? `<tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">적용 할인</td>
-            <td style="padding: 12px 0; font-weight: 600; color: #2e7d32; border-bottom: 1px solid #f0f0f0;">${promoLabelKo}</td>
-          </tr>` : ''}
-          <tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">최종 금액</td>
-            <td style="padding: 12px 0; font-weight: 700; color: #d4af37; font-size: 16px; border-bottom: 1px solid #f0f0f0;">${priceText}</td>
-          </tr>
+          ${ROW('객실', `${roomName} (${roomNameEn})`)}
+          ${ROW('체크인', data.checkIn)}
+          ${ROW('체크아웃', `${data.checkOut} (${pricing.nights}박)`)}
+          ${ROW('인원', `${data.guestCount}명`)}
+          ${ROW('예약 유형', typeLabel)}
+          ${ROW('방문 방법', transportLabel)}
         </table>
-        <!-- Guest Info -->
+        <!-- 가격 breakdown -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: ${FONT_STACK}; font-size: 14px; margin-top: 16px; background-color: #faf6eb; border: 1px solid #f0e8d0;">
+          <tr><td style="padding: 16px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr><td style="padding: 6px 0; color: #888888; font-size: 13px;">객실 요금</td><td align="right" style="padding: 6px 0; font-weight: 600; color: #1a1a2e; font-size: 13px;">${basePriceText} (${pricing.nights}박)</td></tr>
+              ${pricing.extraGuestFeeTotal > 0 ? `<tr><td style="padding: 6px 0; color: #e65100; font-size: 13px;">추가 인원</td><td align="right" style="padding: 6px 0; font-weight: 600; color: #e65100; font-size: 13px;">+${extraFeeText} (${pricing.extraGuestCount}명 × ${pricing.nights}박 × ₩${pricing.extraGuestFeeUnit.toLocaleString()}/인/박)</td></tr>` : ''}
+              ${discountText ? `<tr><td style="padding: 6px 0; color: #2e7d32; font-size: 13px;">할인 (${promoLabelKo})</td><td align="right" style="padding: 6px 0; font-weight: 600; color: #2e7d32; font-size: 13px;">-${discountText}</td></tr>` : ''}
+              ${promoLabelKo && !discountText ? `<tr><td style="padding: 6px 0; color: #2e7d32; font-size: 13px;">적용 프로모션</td><td align="right" style="padding: 6px 0; font-weight: 600; color: #2e7d32; font-size: 13px;">${promoLabelKo}</td></tr>` : ''}
+              <tr><td colspan="2" style="border-top: 1px solid #f0e8d0; padding-top: 10px; font-size: 0;">&nbsp;</td></tr>
+              <tr><td style="padding: 4px 0; color: #1a1a2e; font-size: 14px; font-weight: 700;">최종 금액</td><td align="right" style="padding: 4px 0; font-weight: 700; color: #d4af37; font-size: 18px;">${finalText}</td></tr>
+            </table>
+          </td></tr>
+        </table>
+        <!-- 고객 정보 -->
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 24px;">
           <tr><td style="font-family: ${FONT_STACK}; font-size: 16px; font-weight: 700; color: #1a1a2e; padding-bottom: 12px;">고객 정보</td></tr>
         </table>
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: ${FONT_STACK}; font-size: 14px;">
-          <tr>
-            <td style="padding: 12px 0; color: #888888; width: 120px; border-bottom: 1px solid #f0f0f0;">이름</td>
-            <td style="padding: 12px 0; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #f0f0f0;">${data.guestName}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">이메일</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;"><a href="mailto:${data.guestEmail}" style="color: #1a1a2e; text-decoration: none;">${data.guestEmail}</a></td>
-          </tr>
-          <tr>
-            <td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">전화</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;"><a href="tel:${data.guestPhone}" style="color: #1a1a2e; text-decoration: none;">${data.guestPhone}</a></td>
-          </tr>
-          ${data.specialRequests ? `<tr>
-            <td style="padding: 12px 0; color: #888888; vertical-align: top;">요청사항</td>
-            <td style="padding: 12px 0; color: #1a1a2e;">${data.specialRequests}</td>
-          </tr>` : ''}
+          ${ROW('이름', data.guestName)}
+          <tr><td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">이메일</td><td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;"><a href="mailto:${data.guestEmail}" style="color: #1a1a2e; text-decoration: none;">${data.guestEmail}</a></td></tr>
+          <tr><td style="padding: 12px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">전화</td><td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;"><a href="tel:${data.guestPhone}" style="color: #1a1a2e; text-decoration: none;">${data.guestPhone}</a></td></tr>
+          ${data.specialRequests ? `<tr><td style="padding: 12px 0; color: #888888; vertical-align: top;">요청사항</td><td style="padding: 12px 0; color: #1a1a2e;">${data.specialRequests}</td></tr>` : ''}
         </table>
-        <!-- Confirm Button -->
+        <!-- 확정 / 취소 버튼 -->
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 32px;">
-          <tr><td align="center">
-            <!--[if mso]>
-            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${confirmUrl}" style="height:52px;v-text-anchor:middle;width:280px;" fillcolor="#d4af37" stroke="f">
-              <center style="color:#1a1a2e;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">예약 확정하기</center>
-            </v:roundrect>
-            <![endif]-->
-            <!--[if !mso]><!-->
-            <a href="${confirmUrl}" style="display: inline-block; padding: 16px 48px; background-color: #d4af37; color: #1a1a2e; font-family: ${FONT_STACK}; font-size: 16px; font-weight: 700; text-decoration: none; letter-spacing: 1px;">예약 확정하기</a>
-            <!--<![endif]-->
-          </td></tr>
-          <tr><td align="center" style="padding-top: 12px; font-family: ${FONT_STACK}; font-size: 12px; color: #aaaaaa;">위 버튼을 클릭하면 예약이 확정되고 고객에게 확인 메일이 발송됩니다.</td></tr>
+          <tr>
+            <td align="center" style="padding-bottom: 12px;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${confirmUrl}" style="height:48px;v-text-anchor:middle;width:220px;" fillcolor="#d4af37" stroke="f">
+                <center style="color:#1a1a2e;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">예약 확정</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <a href="${confirmUrl}" style="display: inline-block; padding: 14px 40px; background-color: #d4af37; color: #1a1a2e; font-family: ${FONT_STACK}; font-size: 15px; font-weight: 700; text-decoration: none; letter-spacing: 1px;">예약 확정</a>
+              <!--<![endif]-->
+              &nbsp;&nbsp;
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${cancelUrl}" style="height:48px;v-text-anchor:middle;width:220px;" fillcolor="#dc2626" stroke="f">
+                <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">예약 취소</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <a href="${cancelUrl}" style="display: inline-block; padding: 14px 40px; background-color: #dc2626; color: #ffffff; font-family: ${FONT_STACK}; font-size: 15px; font-weight: 700; text-decoration: none; letter-spacing: 1px;">예약 취소</a>
+              <!--<![endif]-->
+            </td>
+          </tr>
+          <tr><td align="center" style="padding-top: 8px; font-family: ${FONT_STACK}; font-size: 12px; color: #aaaaaa;">확정 클릭 → 고객에게 확인 메일 발송 &nbsp;|&nbsp; 취소 클릭 → 고객에게 취소 메일 발송</td></tr>
         </table>
       </td></tr>
     </table>

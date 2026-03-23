@@ -14,6 +14,19 @@
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { BookingFormData } from '@/types';
 
+/**
+ * 서버에서 계산한 가격 snapshot — 이메일/admin 공통 기준
+ */
+export interface PricingSnapshot {
+  baseAmount: number;         // 객실 요금 합계 (요일별 적용)
+  extraGuestCount: number;    // 기준 초과 인원 수
+  extraGuestFeeUnit: number;  // 1인/1박 추가요금 단가 (₩10,000)
+  extraGuestFeeTotal: number; // 추가 인원 요금 합계
+  discountAmount: number;     // 할인 금액 (프로모션)
+  finalAmount: number;        // 최종 결제 금액
+  nights: number;             // 숙박 일수
+}
+
 export interface StoredBooking {
   bookingId: string;
   token: string;
@@ -27,6 +40,7 @@ export interface StoredBooking {
   agreedAt: string; // ISO timestamp — legal proof of cancellation policy agreement
   appliedPromo?: 'longstay_10' | 'longstay_15' | 'military_fixed' | null;
   finalAmount?: number; // Discounted total (KRW) — source of truth for emails/admin
+  pricing?: PricingSnapshot; // 서버 계산 가격 snapshot
 }
 
 /**
@@ -71,7 +85,7 @@ function getStore(): KVLike {
 /**
  * Save a new booking with pending status
  */
-export async function saveBooking(formData: BookingFormData, bookingId: string): Promise<StoredBooking> {
+export async function saveBooking(formData: BookingFormData, bookingId: string, pricing?: PricingSnapshot): Promise<StoredBooking> {
   const booking: StoredBooking = {
     bookingId,
     token: crypto.randomUUID(),
@@ -80,7 +94,8 @@ export async function saveBooking(formData: BookingFormData, bookingId: string):
     createdAt: new Date().toISOString(),
     agreedAt: new Date().toISOString(),
     appliedPromo: formData.appliedPromo || null,
-    finalAmount: formData.finalAmount || undefined,
+    finalAmount: pricing?.finalAmount ?? formData.finalAmount ?? undefined,
+    pricing: pricing || undefined,
   };
 
   const kvKey = `booking:${booking.token}`;

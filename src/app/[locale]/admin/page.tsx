@@ -9,6 +9,16 @@
 
 import { useState, useCallback } from 'react';
 
+interface PricingSnapshot {
+  baseAmount: number;
+  extraGuestCount: number;
+  extraGuestFeeUnit: number;
+  extraGuestFeeTotal: number;
+  discountAmount: number;
+  finalAmount: number;
+  nights: number;
+}
+
 interface BookingRecord {
   bookingId: string;
   token: string;
@@ -20,6 +30,7 @@ interface BookingRecord {
   cancelledBy?: 'hotel' | 'customer' | 'admin';
   appliedPromo?: string | null;
   finalAmount?: number | null;
+  pricing?: PricingSnapshot | null;
   formData: {
     roomId: string;
     checkIn: string;
@@ -71,15 +82,20 @@ const ROOM_BASE_GUESTS: Record<string, number> = {
 const EXTRA_GUEST_FEE = 10000; // ₩10,000/인/박
 
 /**
- * 추가 인원 정보 계산
+ * 추가 인원 정보 — snapshot 우선, 없으면 재계산 fallback
  */
-function getExtraGuestInfo(b: BookingRecord): { extraCount: number; fee: number } | null {
+function getExtraGuestInfo(b: BookingRecord): { extraCount: number; fee: number; unit: number; nights: number } | null {
+  // snapshot이 있으면 snapshot에서 직접 읽기
+  if (b.pricing && b.pricing.extraGuestCount > 0) {
+    return { extraCount: b.pricing.extraGuestCount, fee: b.pricing.extraGuestFeeTotal, unit: b.pricing.extraGuestFeeUnit, nights: b.pricing.nights };
+  }
+  // fallback: 상수에서 재계산
   const baseGuests = ROOM_BASE_GUESTS[b.formData.roomId];
   if (baseGuests == null) return null;
   const extraCount = Math.max(0, b.formData.guestCount - baseGuests);
   if (extraCount === 0) return null;
   const nights = calculateNights(b.formData.checkIn, b.formData.checkOut);
-  return { extraCount, fee: extraCount * EXTRA_GUEST_FEE * nights };
+  return { extraCount, fee: extraCount * EXTRA_GUEST_FEE * nights, unit: EXTRA_GUEST_FEE, nights };
 }
 
 function formatDateTime(iso: string): string {
@@ -349,7 +365,7 @@ export default function AdminPage() {
                       return (
                         <span className="text-orange-600 font-medium">
                           +{extra.fee.toLocaleString()}원
-                          <span className="block text-[10px] text-orange-400">{extra.extraCount}명×₩10,000/인/박</span>
+                          <span className="block text-[10px] text-orange-400">{extra.extraCount}명 × {extra.nights}박 × ₩{extra.unit.toLocaleString()}</span>
                         </span>
                       );
                     })()}
