@@ -7,7 +7,7 @@
  * Displays all bookings in a dense spreadsheet-style table.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, Fragment } from 'react';
 
 interface PricingSnapshot {
   baseAmount: number;
@@ -147,6 +147,7 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [cancellingToken, setCancellingToken] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetchBookings = useCallback(async (pw: string) => {
     setLoading(true);
@@ -300,130 +301,150 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Table Container */}
+      {/* Table Container — compact 10컬럼 + expandable detail + sticky action */}
       <div className="mt-5 overflow-x-auto bg-white shadow-sm rounded-xl border border-slate-200">
         {filteredBookings.length === 0 ? (
           <div className="p-12 text-center text-slate-500 text-sm">
             {statusFilter === 'all' ? '예약 내역이 없습니다.' : `${statusFilter === 'pending' ? '대기' : statusFilter === 'confirmed' ? '확정' : '취소'} 상태의 예약이 없습니다.`}
           </div>
         ) : (
-          <table className="w-full text-xs border-collapse min-w-[1520px]">
+          <table className="w-full text-xs border-collapse min-w-[960px]">
             <thead>
               <tr className="bg-slate-800 text-white text-left">
-                <th className="px-4 py-3 font-medium whitespace-nowrap">상태</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">예약번호</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">예약일시</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">고객명</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">이메일</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">연락처</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">체크인/아웃</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">룸 타입</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">인원</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">추가요금</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">군인할인</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">방문방법</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">결제예정금액</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">프로모션</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">정책동의</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">취소일시</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">요청사항</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">액션</th>
+                <th className="px-3 py-2.5 font-medium whitespace-nowrap">상태</th>
+                <th className="px-3 py-2.5 font-medium whitespace-nowrap">예약번호</th>
+                <th className="px-3 py-2.5 font-medium whitespace-nowrap">예약일시</th>
+                <th className="px-3 py-2.5 font-medium whitespace-nowrap">고객명</th>
+                <th className="px-3 py-2.5 font-medium whitespace-nowrap">체크인/아웃</th>
+                <th className="px-3 py-2.5 font-medium whitespace-nowrap">룸 타입</th>
+                <th className="px-3 py-2.5 font-medium whitespace-nowrap text-center">인원</th>
+                <th className="px-3 py-2.5 font-medium whitespace-nowrap text-right">추가요금</th>
+                <th className="px-3 py-2.5 font-medium whitespace-nowrap text-right">결제금액</th>
+                <th className="px-3 py-2.5 font-medium whitespace-nowrap text-center sticky right-0 z-20 bg-slate-800" style={{ boxShadow: '-4px 0 8px -4px rgba(0,0,0,0.15)' }}>액션</th>
               </tr>
             </thead>
             <tbody>
-              {filteredBookings.map((b, idx) => (
-                <tr key={b.bookingId} className={`border-b border-slate-100 hover:bg-blue-50/40 transition-colors ${
-                  b.status === 'cancelled' ? 'opacity-60' : ''
-                } ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
-                      b.status === 'confirmed'
-                        ? 'bg-green-100 text-green-800'
-                        : b.status === 'cancelled'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {b.status === 'confirmed' ? '확정' : b.status === 'cancelled' ? '취소' : '대기'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-mono whitespace-nowrap text-slate-600">{b.bookingId}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-600">{formatDateTime(b.createdAt)}</td>
-                  <td className="px-4 py-3 font-medium whitespace-nowrap text-slate-900">{b.formData.guestName}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-600">{b.formData.guestEmail}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-600">{b.formData.guestPhone}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-600">
-                    {b.formData.checkIn} ~ {b.formData.checkOut}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-700">
-                    {ROOM_LABELS[b.formData.roomId] || b.formData.roomId}
-                  </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap text-slate-600">{b.formData.guestCount}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right">
-                    {(() => {
-                      const extra = getExtraGuestInfo(b);
-                      if (!extra) return <span className="text-slate-400">-</span>;
-                      return (
-                        <span className="text-orange-600 font-medium">
-                          +{extra.fee.toLocaleString()}원
-                          <span className="block text-[10px] text-orange-400">{extra.extraCount}명 × {extra.nights}박 × ₩{extra.unit.toLocaleString()}</span>
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap">
-                    {b.formData.reservationType === 'military' ? (
-                      <span className="text-blue-700 font-bold">YES</span>
-                    ) : (
-                      <span className="text-slate-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap text-slate-600">
-                    {b.formData.transportation === 'car' ? '차량' : '도보'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right font-medium">
-                    {(() => {
-                      const { text, isFallback } = formatDisplayPrice(b);
-                      if (text === '-') return <span className="text-slate-400">-</span>;
-                      if (b.appliedPromo === 'military_fixed') return <span className="text-blue-700 font-bold">{text}</span>;
-                      if (isFallback) return <span className="text-slate-400" title="finalAmount 미저장 (추정치)">{text} <span className="text-[10px]">(추정)</span></span>;
-                      return <span className="text-slate-700">{text}</span>;
-                    })()}
-                  </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap">
-                    {b.appliedPromo ? (
-                      <span className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
-                        b.appliedPromo === 'military_fixed' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {b.appliedPromo === 'military_fixed' ? 'Military $64' : b.appliedPromo === 'longstay_15' ? '연박15%' : b.appliedPromo === 'longstay_10' ? '연박10%' : b.appliedPromo}
-                      </span>
-                    ) : <span className="text-slate-400">-</span>}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-600">
-                    {b.agreedAt ? formatDateTime(b.agreedAt) : '-'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-600">
-                    {b.cancelledAt ? (
-                      <span className="text-red-600">{formatDateTime(b.cancelledAt)}</span>
-                    ) : '-'}
-                  </td>
-                  <td className="px-4 py-3 max-w-[200px] truncate text-slate-600" title={b.formData.specialRequests || ''}>
-                    {b.formData.specialRequests || '-'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {b.status !== 'cancelled' ? (
-                      <button
-                        onClick={() => handleCancel(b.token, b.bookingId)}
-                        disabled={cancellingToken === b.token}
-                        className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-red-300 text-red-600 bg-white hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50"
+              {filteredBookings.map((b, idx) => {
+                const isExpanded = expandedId === b.bookingId;
+                const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+                return (
+                  <Fragment key={b.bookingId}>
+                    <tr
+                      className={`border-b border-slate-100 hover:bg-blue-50/40 transition-colors cursor-pointer select-none ${b.status === 'cancelled' ? 'opacity-50' : ''} ${rowBg}`}
+                      onClick={() => setExpandedId(prev => prev === b.bookingId ? null : b.bookingId)}
+                    >
+                      {/* 상태 + 펼침 표시 */}
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <svg className={`w-3 h-3 text-slate-400 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full ${
+                            b.status === 'confirmed' ? 'bg-green-100 text-green-800' : b.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {b.status === 'confirmed' ? '확정' : b.status === 'cancelled' ? '취소' : '대기'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 font-mono whitespace-nowrap text-slate-600">{b.bookingId}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-slate-500">{formatDateTime(b.createdAt)}</td>
+                      <td className="px-3 py-2 font-medium whitespace-nowrap text-slate-900">{b.formData.guestName}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-slate-600">{b.formData.checkIn} ~ {b.formData.checkOut}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-slate-700">{ROOM_LABELS[b.formData.roomId] || b.formData.roomId}</td>
+                      <td className="px-3 py-2 text-center whitespace-nowrap text-slate-600">{b.formData.guestCount}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-right">
+                        {(() => {
+                          const extra = getExtraGuestInfo(b);
+                          if (!extra) return <span className="text-slate-400">-</span>;
+                          return <span className="text-orange-600 font-medium">+{extra.fee.toLocaleString()}원</span>;
+                        })()}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-right font-medium">
+                        {(() => {
+                          const { text, isFallback } = formatDisplayPrice(b);
+                          if (text === '-') return <span className="text-slate-400">-</span>;
+                          if (b.appliedPromo === 'military_fixed') return <span className="text-blue-700 font-bold">{text}</span>;
+                          if (isFallback) return <span className="text-slate-400" title="추정치">{text}</span>;
+                          return <span className="text-slate-700">{text}</span>;
+                        })()}
+                      </td>
+                      {/* Sticky 액션 컬럼 */}
+                      <td
+                        className={`px-3 py-2 whitespace-nowrap text-center sticky right-0 z-10 ${rowBg}`}
+                        style={{ boxShadow: '-4px 0 8px -4px rgba(0,0,0,0.08)' }}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {cancellingToken === b.token ? '처리중...' : '취소'}
-                      </button>
-                    ) : (
-                      <span className="text-[10px] text-slate-400">-</span>
+                        {b.status !== 'cancelled' ? (
+                          <button
+                            onClick={() => handleCancel(b.token, b.bookingId)}
+                            disabled={cancellingToken === b.token}
+                            className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-red-300 text-red-600 bg-white hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50"
+                          >
+                            {cancellingToken === b.token ? '처리중...' : '취소'}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-slate-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                    {/* 펼침 상세 영역 */}
+                    {isExpanded && (
+                      <tr className={rowBg}>
+                        <td colSpan={10} className="px-6 py-4 border-b border-slate-200">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-3 text-xs">
+                            <div>
+                              <span className="text-slate-400 block">이메일</span>
+                              <span className="text-slate-700 mt-0.5 block">{b.formData.guestEmail}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block">연락처</span>
+                              <span className="text-slate-700 mt-0.5 block">{b.formData.guestPhone}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block">예약유형</span>
+                              <span className="text-slate-700 mt-0.5 block">{b.formData.reservationType === 'military' ? '군인' : b.formData.reservationType === 'corporate' ? '기업체' : '일반'}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block">방문방법</span>
+                              <span className="text-slate-700 mt-0.5 block">{b.formData.transportation === 'car' ? '차량' : '도보'}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block">프로모션</span>
+                              <span className="text-slate-700 mt-0.5 block">{b.appliedPromo ? (b.appliedPromo === 'military_fixed' ? 'Military $64' : b.appliedPromo === 'longstay_15' ? '연박15%' : b.appliedPromo === 'longstay_10' ? '연박10%' : b.appliedPromo) : '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block">군인할인</span>
+                              <span className="text-slate-700 mt-0.5 block">{b.formData.reservationType === 'military' ? 'YES' : '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block">정책동의</span>
+                              <span className="text-slate-700 mt-0.5 block">{b.agreedAt ? formatDateTime(b.agreedAt) : '-'}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block">취소일시</span>
+                              <span className={`mt-0.5 block ${b.cancelledAt ? 'text-red-600' : 'text-slate-700'}`}>{b.cancelledAt ? formatDateTime(b.cancelledAt) : '-'}</span>
+                            </div>
+                            {(() => {
+                              const extra = getExtraGuestInfo(b);
+                              if (!extra) return null;
+                              return (
+                                <div>
+                                  <span className="text-slate-400 block">추가요금 상세</span>
+                                  <span className="text-orange-600 mt-0.5 block">{extra.extraCount}명 × {extra.nights}박 × ₩{extra.unit.toLocaleString()}/인/박</span>
+                                </div>
+                              );
+                            })()}
+                            {b.formData.specialRequests && (
+                              <div className="col-span-2 md:col-span-4">
+                                <span className="text-slate-400 block">요청사항</span>
+                                <span className="text-slate-700 mt-0.5 block">{b.formData.specialRequests}</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                </tr>
-              ))}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         )}

@@ -9,6 +9,7 @@ export interface Offer {
     desc: { ko: string; en: string; ja: string; zh: string };
     period: { ko: string; en: string; ja: string; zh: string };
     details: { ko: string[]; en: string[]; ja: string[]; zh: string[] };
+    showHomeCta?: boolean; // 홈 카드에 '이 혜택으로 예약하기' CTA 노출 여부
 }
 
 export const offers: Offer[] = [
@@ -16,6 +17,7 @@ export const offers: Offer[] = [
         id: 1,
         type: 'room',
         image: '/images/events/early-bird.jpg',
+        showHomeCta: true,
         title: { ko: '연박 할인 특가', en: 'Long-Stay Discount', ja: '連泊割引特価', zh: '连住折扣特价' },
         subtitle: { ko: '최대 15% 할인', en: 'Up to 15% OFF', ja: '最大15%OFF', zh: '最高15%折扣' },
         desc: { ko: '2박 이상 10% 할인, 7박 이상 15% 할인 (타 이벤트와 중복 적용 불가)', en: '10% off for 2+ nights, 15% off for 7+ nights (Cannot combine with other offers)', ja: '2泊以上10%OFF、7泊以上15%OFF（他イベントとの併用不可）', zh: '2晚以上9折，7晚以上85折（不可与其他优惠同时使用）' },
@@ -106,6 +108,7 @@ export const offers: Offer[] = [
         id: 4,
         type: 'event',
         image: '/images/events/military-special.png',
+        showHomeCta: true,
         title: { ko: 'US MILITARY 스페셜 특가', en: 'US Military Special Rate', ja: 'US MILITARY スペシャル特価', zh: 'US MILITARY 特价优惠' },
         subtitle: { ko: '주말 할증 없는 $64 고정 요금 및 특별 혜택', en: 'Flat $64 Rate Every Day & Exclusive Perks', ja: '週末割増なし $64 固定料金＆特別特典', zh: '无周末加价 $64固定价格及专属福利' },
         desc: { ko: '1박 $64 고정 · 디럭스 무료 업그레이드 · 1인 조식 포함 · 웰컴 기프트', en: 'Flat $64/night · Free Deluxe upgrade · Breakfast included · Welcome Gift', ja: '1泊$64固定 · デラックス無料UP · 朝食1名付 · ウェルカムギフト', zh: '每晚$64固定 · 免费升级豪华房 · 含1人早餐 · 欢迎礼物' },

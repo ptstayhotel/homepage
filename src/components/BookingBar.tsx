@@ -67,18 +67,20 @@ export default function BookingBar({ locale }: BookingBarProps) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-5 md:py-8">
                 <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-end">
 
-                    {/* Check-In */}
+                    {/* Check-In — value wrapper 높이 통일 */}
                     <div className="w-full md:flex-1 group">
                         <label className="block text-xs tracking-[0.25em] text-neutral-400 mb-2 group-hover:text-neutral-200 transition-colors font-medium">
                             {labels.checkIn}
                         </label>
-                        <DatePickerInput
-                            value={checkIn}
-                            onChange={handleCheckInChange}
-                            minDate={getTodayString()}
-                            locale={locale}
-                            theme="dark"
-                        />
+                        <div className="md:min-h-[68px] md:flex md:flex-col md:justify-end">
+                            <DatePickerInput
+                                value={checkIn}
+                                onChange={handleCheckInChange}
+                                minDate={getTodayString()}
+                                locale={locale}
+                                theme="dark"
+                            />
+                        </div>
                     </div>
 
                     {/* Check-Out */}
@@ -86,39 +88,45 @@ export default function BookingBar({ locale }: BookingBarProps) {
                         <label className="block text-xs tracking-[0.25em] text-neutral-400 mb-2 group-hover:text-neutral-200 transition-colors font-medium">
                             {labels.checkOut}
                         </label>
-                        <DatePickerInput
-                            value={checkOut}
-                            onChange={setCheckOut}
-                            minDate={checkIn || getTodayString()}
-                            locale={locale}
-                            theme="dark"
-                        />
+                        <div className="md:min-h-[68px] md:flex md:flex-col md:justify-end">
+                            <DatePickerInput
+                                value={checkOut}
+                                onChange={setCheckOut}
+                                minDate={checkIn || getTodayString()}
+                                locale={locale}
+                                theme="dark"
+                            />
+                        </div>
                     </div>
 
-                    {/* Guests */}
+                    {/* Guests — DatePicker와 동일 높이 wrapper */}
                     <div className="w-full md:w-36 group">
                         <label className="block text-xs tracking-[0.25em] text-neutral-400 mb-2 group-hover:text-neutral-200 transition-colors font-medium">
                             {labels.guests}
                         </label>
-                        <DropdownSelect
-                            value={guests}
-                            onChange={setGuests}
-                            options={[1, 2, 3, 4].map(n => ({ value: String(n), label: `${n}${{ ko: '명', en: '', ja: '名', zh: '位' }[locale]}` }))}
-                            theme="dark"
-                        />
+                        <div className="md:min-h-[68px] md:flex md:flex-col md:justify-end">
+                            <DropdownSelect
+                                value={guests}
+                                onChange={setGuests}
+                                options={[1, 2, 3, 4].map(n => ({ value: String(n), label: `${n}${{ ko: '명', en: '', ja: '名', zh: '位' }[locale]}` }))}
+                                theme="dark"
+                            />
+                        </div>
                     </div>
 
-                    {/* Reservation Type */}
+                    {/* Reservation Type — DatePicker와 동일 높이 wrapper */}
                     <div className="w-full md:w-44 group">
                         <label className="block text-xs tracking-[0.25em] text-neutral-400 mb-2 group-hover:text-neutral-200 transition-colors font-medium">
                             {labels.type}
                         </label>
-                        <DropdownSelect
-                            value={reservationType}
-                            onChange={(val) => setReservationType(val as ReservationType)}
-                            options={typeOptions.map(opt => ({ value: opt.value, label: opt.label[locale] }))}
-                            theme="dark"
-                        />
+                        <div className="md:min-h-[68px] md:flex md:flex-col md:justify-end">
+                            <DropdownSelect
+                                value={reservationType}
+                                onChange={(val) => setReservationType(val as ReservationType)}
+                                options={typeOptions.map(opt => ({ value: opt.value, label: opt.label[locale] }))}
+                                theme="dark"
+                            />
+                        </div>
                     </div>
 
                     {/* Submit Button */}
