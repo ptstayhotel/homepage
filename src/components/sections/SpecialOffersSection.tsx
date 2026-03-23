@@ -209,16 +209,16 @@ export default function SpecialOffersSection({ locale }: SpecialOffersSectionPro
 
           {/* Modal Content */}
           <div
-            className="relative bg-white max-w-2xl w-full max-h-[85vh] overflow-y-auto animate-fade-in-up shadow-2xl"
+            className="relative bg-white max-w-2xl w-full max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-fade-in-up shadow-2xl rounded-lg sm:rounded-none"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
+            {/* Close button — 모바일 터치 영역 확대 */}
             <button
               onClick={() => setSelectedOffer(null)}
-              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+              className="absolute top-3 right-3 z-10 w-11 h-11 flex items-center justify-center bg-black/40 rounded-full text-white/90 hover:text-white hover:bg-black/60 transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
@@ -274,11 +274,11 @@ export default function SpecialOffersSection({ locale }: SpecialOffersSectionPro
               </ul>
 
               {/* CTA + Close — 모달 내부 CTA만 실제 예약 이동 */}
-              <div className="mt-8 flex flex-col items-center gap-3">
+              <div className="mt-8 flex flex-col items-center gap-3 w-full">
                 {selectedOffer.id === 1 && (
                   <a
                     href={`/${locale}/booking?promo=longstay`}
-                    className="inline-block px-10 py-3 bg-accent-500 text-primary-900 text-sm font-bold tracking-widest uppercase transition-all duration-300 hover:bg-primary-900 hover:text-white"
+                    className="block w-full sm:w-auto text-center px-10 py-4 sm:py-3 bg-accent-500 text-primary-900 text-sm font-bold tracking-widest uppercase transition-all duration-300 hover:bg-primary-900 hover:text-white"
                   >
                     {ctaLabel[locale]}
                   </a>
@@ -286,14 +286,14 @@ export default function SpecialOffersSection({ locale }: SpecialOffersSectionPro
                 {selectedOffer.id === 4 && (
                   <a
                     href="/en/booking?promo=military"
-                    className="inline-block px-10 py-3 bg-accent-500 text-primary-900 text-sm font-bold tracking-widest uppercase transition-all duration-300 hover:bg-primary-900 hover:text-white"
+                    className="block w-full sm:w-auto text-center px-10 py-4 sm:py-3 bg-accent-500 text-primary-900 text-sm font-bold tracking-widest uppercase transition-all duration-300 hover:bg-primary-900 hover:text-white"
                   >
                     US Military Special — Book Now
                   </a>
                 )}
                 <button
                   onClick={() => setSelectedOffer(null)}
-                  className="px-10 py-3 bg-primary-900 text-white text-sm tracking-widest uppercase transition-all duration-300 hover:bg-accent-500"
+                  className="w-full sm:w-auto px-10 py-4 sm:py-3 bg-primary-900 text-white text-sm tracking-widest uppercase transition-all duration-300 hover:bg-accent-500"
                 >
                   {closeLabel[locale]}
                 </button>

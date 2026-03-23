@@ -98,6 +98,24 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
                 {roomName}
               </h1>
               <div className="w-16 h-1 bg-gradient-to-r from-accent-500 to-accent-400 my-6 rounded-full" />
+
+              {/* 핵심 스펙 한 줄 요약 — 즉시 비교/판단용 */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-300 mb-6">
+                <span>{room.baseGuests ? `${room.baseGuests}~${room.maxGuests}` : room.maxGuests}{{ ko: '인', en: ' guests', ja: '名', zh: '位' }[locale]}</span>
+                <span className="text-neutral-500">·</span>
+                <span>{room.size}m²</span>
+                <span className="text-neutral-500">·</span>
+                <span>{tBed(room.bedType)}</span>
+                <span className="text-neutral-500">·</span>
+                <span className="text-accent-400 font-medium">{formatPrice(room.pricePerNight, locale as Locale)}~{{ ko: '/박', en: '/night', ja: '/泊', zh: '/晚' }[locale]}</span>
+                {room.extraGuestFee && room.extraGuestFee > 0 && (
+                  <>
+                    <span className="text-neutral-500">·</span>
+                    <span className="text-amber-400 text-xs">{{ ko: `추가 ₩${room.extraGuestFee.toLocaleString()}/인/박`, en: `+₩${room.extraGuestFee.toLocaleString()}/guest/night`, ja: `追加 ₩${room.extraGuestFee.toLocaleString()}/名/泊`, zh: `加收 ₩${room.extraGuestFee.toLocaleString()}/人/晚` }[locale]}</span>
+                  </>
+                )}
+              </div>
+
               <p className="text-neutral-200 text-lg mb-8">{description}</p>
 
               {/* Price */}
@@ -235,6 +253,16 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
         </div>
       </section>
 
+      {/* 모바일 sticky 예약 CTA */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-t border-neutral-200 p-3 lg:hidden">
+        <Link
+          href={`/${locale}/booking?room=${room.id}`}
+          className="block w-full text-center py-3.5 bg-accent-500 text-primary-950 font-bold text-sm tracking-wider uppercase rounded-lg"
+        >
+          {t('bookThisRoom')}
+        </Link>
+      </div>
+
       {/* Other Rooms */}
       <section className="section bg-neutral-50">
         <div className="container-custom">
@@ -271,6 +299,9 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
           </div>
         </div>
       </section>
+
+      {/* 모바일 sticky CTA 높이만큼 하단 여백 */}
+      <div className="h-16 lg:hidden" />
     </>
   );
 }

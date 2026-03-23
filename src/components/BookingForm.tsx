@@ -822,13 +822,13 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
           </div>
         )}
 
-        {/* Navigation buttons */}
+        {/* Navigation buttons — 모바일 터치 영역 확보 */}
         {step !== 'success' && (
-          <div className="flex justify-between mt-12 pt-8 border-t border-neutral-200">
+          <div className="flex justify-between mt-12 pt-8 border-t border-neutral-200 gap-3">
             {step !== 'dates' ? (
               <button
                 onClick={prevStep}
-                className="px-8 py-4 border border-neutral-300 text-neutral-600 text-sm tracking-widest uppercase transition-all duration-300 hover:border-primary-900 hover:text-primary-900"
+                className="px-6 sm:px-8 py-4 min-h-[48px] border border-neutral-300 text-neutral-600 text-sm tracking-widest uppercase transition-all duration-300 hover:border-primary-900 hover:text-primary-900"
               >
                 {{ ko: '이전', en: 'Back', ja: '戻る', zh: '返回' }[locale]}
               </button>
@@ -840,7 +840,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting || !formData.agreedToPolicy}
-                className="px-10 py-4 bg-accent-500 text-primary-900 text-sm tracking-widest uppercase transition-all duration-300 hover:bg-primary-900 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 sm:flex-none px-8 sm:px-10 py-4 min-h-[52px] bg-accent-500 text-primary-900 text-sm font-bold tracking-widest uppercase transition-all duration-300 hover:bg-primary-900 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting
                   ? ({ ko: '처리 중...', en: 'Processing...', ja: '処理中...', zh: '处理中...' }[locale])
@@ -849,7 +849,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
             ) : (
               <button
                 onClick={nextStep}
-                className="px-10 py-4 bg-primary-900 text-white text-sm tracking-widest uppercase transition-all duration-300 hover:bg-accent-500"
+                className="flex-1 sm:flex-none px-8 sm:px-10 py-4 min-h-[48px] bg-primary-900 text-white text-sm tracking-widest uppercase transition-all duration-300 hover:bg-accent-500"
               >
                 {{ ko: '다음', en: 'Next', ja: '次へ', zh: '下一步' }[locale]}
               </button>
