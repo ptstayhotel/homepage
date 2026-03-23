@@ -17,10 +17,13 @@ import { BookingFormData } from '@/types';
 export interface StoredBooking {
   bookingId: string;
   token: string;
-  status: 'pending' | 'confirmed';
+  status: 'pending' | 'confirmed' | 'cancelled';
   formData: BookingFormData;
   createdAt: string;
   confirmedAt?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+  cancelledBy?: 'hotel' | 'customer' | 'admin';
   agreedAt: string; // ISO timestamp — legal proof of cancellation policy agreement
   appliedPromo?: 'longstay_10' | 'longstay_15' | 'military_fixed' | null;
   finalAmount?: number; // Discounted total (KRW) — source of truth for emails/admin
@@ -137,6 +140,13 @@ export async function confirmBooking(token: string): Promise<StoredBooking | nul
   }
 
   const booking = JSON.parse(data) as StoredBooking;
+
+  // 취소된 예약은 확정 불가
+  if (booking.status === 'cancelled') {
+    console.error(`[BookingStore] ❌ CONFIRM BLOCKED: ${booking.bookingId} is cancelled`);
+    return null;
+  }
+
   booking.status = 'confirmed';
   booking.confirmedAt = new Date().toISOString();
 
@@ -144,4 +154,44 @@ export async function confirmBooking(token: string): Promise<StoredBooking | nul
 
   console.log(`[BookingStore] ✅ Confirmed: ${booking.bookingId} | token: ${token}`);
   return booking;
+}
+
+/**
+ * Cancel a booking by token
+ * 허용: pending → cancelled, confirmed → cancelled
+ * 금지: cancelled → cancelled (idempotent 처리, 기존 데이터 반환)
+ */
+export async function cancelBooking(
+  token: string,
+  reason?: string,
+  cancelledBy: 'hotel' | 'customer' | 'admin' = 'admin',
+): Promise<{ booking: StoredBooking | null; alreadyCancelled: boolean }> {
+  const kvKey = `booking:${token}`;
+  console.log(`[BookingStore] CANCEL key="${kvKey}"`);
+
+  const kv = getStore();
+  const data = await kv.get(kvKey);
+
+  if (!data) {
+    console.error(`[BookingStore] ❌ CANCEL FAILED: key="${kvKey}" | KV returned null`);
+    return { booking: null, alreadyCancelled: false };
+  }
+
+  const booking = JSON.parse(data) as StoredBooking;
+
+  // 이미 취소된 예약 — idempotent 처리
+  if (booking.status === 'cancelled') {
+    console.log(`[BookingStore] ⚠️ Already cancelled: ${booking.bookingId}`);
+    return { booking, alreadyCancelled: true };
+  }
+
+  booking.status = 'cancelled';
+  booking.cancelledAt = new Date().toISOString();
+  booking.cancelReason = reason || undefined;
+  booking.cancelledBy = cancelledBy;
+
+  await kv.put(kvKey, JSON.stringify(booking));
+
+  console.log(`[BookingStore] ✅ Cancelled: ${booking.bookingId} | by: ${cancelledBy} | token: ${token}`);
+  return { booking, alreadyCancelled: false };
 }

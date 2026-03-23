@@ -494,3 +494,162 @@ export async function sendConfirmationEmail(
     };
   }
 }
+
+/**
+ * Phase 3: Send cancellation notification to GUEST
+ *
+ * 예약 취소 시 고객에게 취소 안내 이메일 발송
+ * - 예약번호, 객실명, 체크인/아웃, 인원, 취소 시각, 문의 연락처 포함
+ * - 이중 언어 (한국어 + English)
+ */
+export async function sendCancellationEmail(
+  data: BookingFormData,
+  bookingId: string,
+  cancelledAt: string,
+  finalAmount?: number,
+): Promise<{ success: boolean; error?: string }> {
+  const brand = getBrandConfig();
+  const hotelEmail = brand.contact.email;
+  const hotelPhone = brand.contact.phone;
+  const brandName = brand.name.ko;
+  const { roomName, roomNameEn, nights, priceText } = getBookingDetails(data, finalAmount);
+  const fromEmail = process.env.EMAIL_FROM || 'noreply@pyeongtaekstay.com';
+  const cancelDate = cancelledAt.split('T')[0];
+  const cancelTime = cancelledAt.split('T')[1]?.substring(0, 5) || '';
+
+  const cancelHtml = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Cancelled - ${bookingId}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f5;">
+  <tr><td align="center" style="padding: 32px 16px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; width: 100%; border-collapse: collapse;">
+
+      <!-- 헤더 -->
+      <tr><td style="background-color: #1a1a2e; padding: 28px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td style="font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 700; color: #d4af37; letter-spacing: 3px;">STAY HOTEL</td>
+            <td align="right" style="font-family: ${FONT_STACK}; font-size: 10px; color: #8888a0; letter-spacing: 2px; text-transform: uppercase;">Booking Cancelled</td>
+          </tr>
+        </table>
+      </td></tr>
+      <!-- 빨간색 경고선 -->
+      <tr><td style="background-color: #dc2626; height: 3px; font-size: 0; line-height: 0;">&nbsp;</td></tr>
+
+      <!-- 취소 메시지 -->
+      <tr><td style="background-color: #ffffff; padding: 32px 40px 24px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td align="center" style="font-family: ${FONT_STACK}; font-size: 22px; font-weight: 700; color: #dc2626; padding-bottom: 8px;">예약이 취소되었습니다</td></tr>
+          <tr><td align="center" style="font-family: ${FONT_STACK}; font-size: 13px; color: #888888; padding-bottom: 4px;">Your booking has been cancelled.</td></tr>
+        </table>
+      </td></tr>
+
+      <!-- 예약번호 -->
+      <tr><td style="background-color: #ffffff; padding: 0 40px 28px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #fef2f2; border-left: 4px solid #dc2626;">
+          <tr><td style="padding: 20px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td>
+                  <span style="font-family: ${FONT_STACK}; font-size: 11px; color: #888888; letter-spacing: 1px;">예약번호 / Booking No.</span><br>
+                  <span style="font-family: 'Courier New', Courier, monospace; font-size: 22px; font-weight: 700; color: #1a1a2e; letter-spacing: 1px;">${bookingId}</span>
+                </td>
+                <td align="right" style="vertical-align: bottom;">
+                  <span style="font-family: ${FONT_STACK}; font-size: 11px; color: #dc2626;">취소일: ${cancelDate} ${cancelTime}</span>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- 숙박 정보 -->
+      <tr><td style="background-color: #ffffff; padding: 0 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td style="font-family: ${FONT_STACK}; font-size: 13px; font-weight: 700; color: #1a1a2e; letter-spacing: 2px; text-transform: uppercase; padding-bottom: 8px;">취소된 예약 정보 / Cancelled Booking Details</td></tr>
+          <tr><td style="border-bottom: 1px solid #dc2626; font-size: 0; line-height: 0; height: 1px;">&nbsp;</td></tr>
+        </table>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: ${FONT_STACK}; font-size: 14px;">
+          <tr>
+            <td style="padding: 14px 0; color: #888888; width: 45%; border-bottom: 1px solid #f0f0f0;">객실 / Room</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${roomName}<br><span style="font-size: 12px; color: #888888; font-weight: 400;">${roomNameEn}</span></td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">체크인 / Check-in</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${data.checkIn}</td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">체크아웃 / Check-out</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${data.checkOut} (${nights}박 / ${nights} night${nights > 1 ? 's' : ''})</td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">인원 / Guests</td>
+            <td style="padding: 14px 0; color: #1a1a2e; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">${data.guestCount}명</td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 0; color: #888888; border-bottom: 1px solid #f0f0f0;">금액 / Amount</td>
+            <td style="padding: 14px 0; color: #888888; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0; text-decoration: line-through;">${priceText}</td>
+          </tr>
+        </table>
+      </td></tr>
+
+      <!-- 안내사항 -->
+      <tr><td style="background-color: #ffffff; padding: 24px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f9fafb; border-left: 3px solid #9ca3af;">
+          <tr><td style="padding: 20px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: ${FONT_STACK}; font-size: 13px; color: #666666;">
+              <tr><td style="font-weight: 700; color: #1a1a2e; padding-bottom: 12px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;">안내사항 / Notice</td></tr>
+              <tr><td style="padding-bottom: 6px; line-height: 1.6;">&#8226; 본 예약은 정상적으로 취소 처리되었습니다</td></tr>
+              <tr><td style="padding-bottom: 6px; line-height: 1.6;">&#8226; 재예약을 원하시면 홈페이지를 이용해주세요</td></tr>
+              <tr><td style="padding-bottom: 6px; line-height: 1.6;">&#8226; 문의사항은 호텔로 직접 연락해주세요</td></tr>
+              <tr><td style="padding-top: 8px; border-top: 1px solid #e5e7eb; color: #888888; line-height: 1.6;">&#8226; This booking has been successfully cancelled</td></tr>
+              <tr><td style="padding-bottom: 2px; color: #888888; line-height: 1.6;">&#8226; To rebook, please visit our website</td></tr>
+              <tr><td style="color: #888888; line-height: 1.6;">&#8226; For inquiries, please contact the hotel directly</td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <!-- 푸터 -->
+      <tr><td style="background-color: #ffffff; padding: 0 40px 32px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td style="border-top: 1px solid #e5e5e5; padding-top: 24px;" align="center">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr><td align="center" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-weight: 700; color: #1a1a2e; letter-spacing: 2px; padding-bottom: 8px;">STAY HOTEL</td></tr>
+              <tr><td align="center" style="font-family: ${FONT_STACK}; font-size: 12px; color: #888888; padding-bottom: 4px;">${hotelPhone} &nbsp;|&nbsp; ${hotelEmail}</td></tr>
+              <tr><td align="center" style="font-family: ${FONT_STACK}; font-size: 12px; color: #888888; padding-bottom: 4px;">${brand.contact.address.ko}</td></tr>
+              <tr><td align="center" style="font-family: ${FONT_STACK}; font-size: 11px; color: #aaaaaa; padding-top: 4px;">${brand.contact.address.en}</td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+
+  try {
+    await sendEmail({
+      from: `${brandName} <${fromEmail}>`,
+      to: data.guestEmail,
+      subject: `[STAY HOTEL] 예약 취소 안내 / Booking Cancelled - ${bookingId}`,
+      html: cancelHtml,
+    });
+
+    console.log(`Cancellation email sent: ${bookingId} -> ${data.guestEmail}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Cancellation email send failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send email',
+    };
+  }
+}

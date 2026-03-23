@@ -11,9 +11,13 @@ import { useState, useCallback } from 'react';
 
 interface BookingRecord {
   bookingId: string;
-  status: 'pending' | 'confirmed';
+  token: string;
+  status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: string;
   agreedAt?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+  cancelledBy?: 'hotel' | 'customer' | 'admin';
   appliedPromo?: string | null;
   finalAmount?: number | null;
   formData: {
@@ -29,6 +33,8 @@ interface BookingRecord {
     specialRequests?: string;
   };
 }
+
+type StatusFilter = 'all' | 'pending' | 'confirmed' | 'cancelled';
 
 const ROOM_LABELS: Record<string, string> = {
   standard: '스탠다드',
@@ -98,6 +104,8 @@ export default function AdminPage() {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [cancellingToken, setCancellingToken] = useState<string | null>(null);
 
   const fetchBookings = useCallback(async (pw: string) => {
     setLoading(true);
@@ -128,6 +136,48 @@ export default function AdminPage() {
 
   const handleRefresh = () => {
     fetchBookings(password);
+  };
+
+  const handleCancel = async (token: string, bookingId: string) => {
+    if (!confirm(`예약 ${bookingId}을(를) 취소하시겠습니까?\n취소 시 고객에게 취소 메일이 발송됩니다.`)) return;
+
+    setCancellingToken(token);
+    try {
+      const res = await fetch('/api/booking-cancel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Key': password,
+        },
+        body: JSON.stringify({ token, cancelledBy: 'admin' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(`취소 실패: ${data.error || '알 수 없는 오류'}`);
+        return;
+      }
+      if (data.alreadyCancelled) {
+        alert('이미 취소된 예약입니다.');
+      } else {
+        alert(`예약 ${bookingId} 취소 완료`);
+      }
+      fetchBookings(password);
+    } catch {
+      alert('서버 연결 실패');
+    } finally {
+      setCancellingToken(null);
+    }
+  };
+
+  const filteredBookings = statusFilter === 'all'
+    ? bookings
+    : bookings.filter(b => b.status === statusFilter);
+
+  const statusCounts = {
+    all: bookings.length,
+    pending: bookings.filter(b => b.status === 'pending').length,
+    confirmed: bookings.filter(b => b.status === 'confirmed').length,
+    cancelled: bookings.filter(b => b.status === 'cancelled').length,
   };
 
   // --- Login Gate ---
@@ -184,14 +234,39 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* 상태 필터 */}
+      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-6 py-3 mt-3 flex items-center gap-2 flex-wrap">
+        {([
+          { key: 'all' as StatusFilter, label: '전체', color: 'slate' },
+          { key: 'pending' as StatusFilter, label: '대기', color: 'amber' },
+          { key: 'confirmed' as StatusFilter, label: '확정', color: 'green' },
+          { key: 'cancelled' as StatusFilter, label: '취소', color: 'red' },
+        ]).map(({ key, label, color }) => (
+          <button
+            key={key}
+            onClick={() => setStatusFilter(key)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              statusFilter === key
+                ? color === 'slate' ? 'bg-slate-900 text-white'
+                : color === 'amber' ? 'bg-amber-500 text-white'
+                : color === 'green' ? 'bg-green-600 text-white'
+                : 'bg-red-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            {label} ({statusCounts[key]})
+          </button>
+        ))}
+      </div>
+
       {/* Table Container */}
       <div className="mt-5 overflow-x-auto bg-white shadow-sm rounded-xl border border-slate-200">
-        {bookings.length === 0 ? (
+        {filteredBookings.length === 0 ? (
           <div className="p-12 text-center text-slate-500 text-sm">
-            예약 내역이 없습니다.
+            {statusFilter === 'all' ? '예약 내역이 없습니다.' : `${statusFilter === 'pending' ? '대기' : statusFilter === 'confirmed' ? '확정' : '취소'} 상태의 예약이 없습니다.`}
           </div>
         ) : (
-          <table className="w-full text-xs border-collapse min-w-[1200px]">
+          <table className="w-full text-xs border-collapse min-w-[1400px]">
             <thead>
               <tr className="bg-slate-800 text-white text-left">
                 <th className="px-4 py-3 font-medium whitespace-nowrap">상태</th>
@@ -208,19 +283,25 @@ export default function AdminPage() {
                 <th className="px-4 py-3 font-medium whitespace-nowrap">결제예정금액</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">프로모션</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">정책동의</th>
+                <th className="px-4 py-3 font-medium whitespace-nowrap">취소일시</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">요청사항</th>
+                <th className="px-4 py-3 font-medium whitespace-nowrap">액션</th>
               </tr>
             </thead>
             <tbody>
-              {bookings.map((b, idx) => (
-                <tr key={b.bookingId} className={`border-b border-slate-100 hover:bg-blue-50/40 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+              {filteredBookings.map((b, idx) => (
+                <tr key={b.bookingId} className={`border-b border-slate-100 hover:bg-blue-50/40 transition-colors ${
+                  b.status === 'cancelled' ? 'opacity-60' : ''
+                } ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
                       b.status === 'confirmed'
                         ? 'bg-green-100 text-green-800'
+                        : b.status === 'cancelled'
+                        ? 'bg-red-100 text-red-800'
                         : 'bg-amber-100 text-amber-800'
                     }`}>
-                      {b.status === 'confirmed' ? '확정' : '대기'}
+                      {b.status === 'confirmed' ? '확정' : b.status === 'cancelled' ? '취소' : '대기'}
                     </span>
                   </td>
                   <td className="px-4 py-3 font-mono whitespace-nowrap text-slate-600">{b.bookingId}</td>
@@ -266,8 +347,26 @@ export default function AdminPage() {
                   <td className="px-4 py-3 whitespace-nowrap text-slate-600">
                     {b.agreedAt ? formatDateTime(b.agreedAt) : '-'}
                   </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-slate-600">
+                    {b.cancelledAt ? (
+                      <span className="text-red-600">{formatDateTime(b.cancelledAt)}</span>
+                    ) : '-'}
+                  </td>
                   <td className="px-4 py-3 max-w-[200px] truncate text-slate-600" title={b.formData.specialRequests || ''}>
                     {b.formData.specialRequests || '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {b.status !== 'cancelled' ? (
+                      <button
+                        onClick={() => handleCancel(b.token, b.bookingId)}
+                        disabled={cancellingToken === b.token}
+                        className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-red-300 text-red-600 bg-white hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50"
+                      >
+                        {cancellingToken === b.token ? '처리중...' : '취소'}
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-slate-400">-</span>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -93,6 +93,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // ── Guard: cancelled booking cannot be confirmed ──
+  if (existing.status === 'cancelled') {
+    return new NextResponse(
+      htmlPage('취소된 예약입니다', `예약번호 ${existing.bookingId}는 취소된 예약이므로 확정할 수 없습니다.`),
+      { status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
+  }
+
   // ── Step 1: Update status → 'confirmed' in KV ──
   const booking = await confirmBooking(token);
   if (!booking) {
