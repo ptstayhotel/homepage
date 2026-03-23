@@ -704,6 +704,16 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
               </div>
             </div>
 
+            {/* 예약 방식 안내 */}
+            <div className="p-4 bg-blue-50 border-l-2 border-blue-500">
+              <p className="text-blue-800 text-sm font-medium mb-1">
+                {{ ko: '예약 접수 안내', en: 'Booking Process', ja: '予約受付のご案内', zh: '预订流程说明' }[locale]}
+              </p>
+              <p className="text-blue-700 text-sm leading-relaxed">
+                {{ ko: '예약 제출 시 예약 요청이 접수되며, 호텔 확인 후 확정 이메일이 발송됩니다. 즉시 확정이 아닌 점 양해 부탁드립니다.', en: 'Your booking will be submitted as a request. A confirmation email will be sent after hotel review. This is not an instant confirmation.', ja: 'ご予約はリクエストとして受付されます。ホテル確認後に確定メールが送信されます。即時確定ではございません。', zh: '提交后为预订请求，酒店确认后发送确认邮件。非即时确认，敬请谅解。' }[locale]}
+              </p>
+            </div>
+
             <div className="p-4 bg-primary-50 border-l-2 border-primary-900">
               <p className="text-primary-900 text-sm">{t('paymentNote')}</p>
             </div>
@@ -758,6 +768,24 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
               <span className="font-bold block mb-1">&#9888; {{ ko: '안내', en: 'Notice', ja: 'ご案内', zh: '提示' }[locale]}</span>
               {t('bookingPendingNotice')}
             </div>
+            {/* 다음 단계 안내 */}
+            <div className="max-w-sm mx-auto mb-8 text-left">
+              <div className="space-y-2 text-sm">
+                <div className="flex gap-3 items-start">
+                  <span className="w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                  <span className="text-neutral-600">{{ ko: '예약 요청이 접수되었습니다', en: 'Your booking request has been received', ja: '予約リクエストを受け付けました', zh: '预订请求已受理' }[locale]}</span>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <span className="w-5 h-5 rounded-full bg-amber-400 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                  <span className="text-neutral-600">{{ ko: '호텔에서 확인 후 확정 메일을 보내드립니다', en: 'The hotel will review and send a confirmation email', ja: 'ホテル確認後、確定メールをお送りします', zh: '酒店确认后将发送确认邮件' }[locale]}</span>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <span className="w-5 h-5 rounded-full bg-neutral-300 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                  <span className="text-neutral-600">{{ ko: '결제는 체크인 시 현장에서 진행됩니다', en: 'Payment is processed on-site at check-in', ja: 'お支払いはチェックイン時に現地で行います', zh: '付款在入住时于酒店现场进行' }[locale]}</span>
+                </div>
+              </div>
+            </div>
+
             <div className="inline-block border-2 border-amber-400 bg-amber-50 px-8 py-4 mb-10">
               <span className="text-xs text-amber-700 tracking-widest uppercase block mb-1">{t('bookingId')}</span>
               <p className="text-xl font-mono font-bold text-primary-900">{bookingId}</p>

@@ -65,7 +65,7 @@ export default function RoomCard({ room, locale }: RoomCardProps) {
           </h3>
 
           {/* Room Info */}
-          <div className="flex items-center gap-4 sm:gap-6 text-sm text-neutral-400 mb-4">
+          <div className="flex items-center gap-4 sm:gap-6 text-sm text-neutral-400 mb-4 flex-wrap">
             <span className="flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -80,6 +80,12 @@ export default function RoomCard({ room, locale }: RoomCardProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
               </svg>
               {room.size}m²
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" />
+              </svg>
+              {{ single: { ko: '싱글', en: 'Single', ja: 'シングル', zh: '单人' }, double: { ko: '더블', en: 'Double', ja: 'ダブル', zh: '双人' }, twin: { ko: '트윈', en: 'Twin', ja: 'ツイン', zh: '双床' }, queen: { ko: '퀸', en: 'Queen', ja: 'クイーン', zh: '大床' }, king: { ko: '킹', en: 'King', ja: 'キング', zh: '特大床' } }[room.bedType]?.[locale] || room.bedType}
             </span>
           </div>
 
