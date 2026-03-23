@@ -198,6 +198,11 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
 
   // Submit booking
   const handleSubmit = async () => {
+    // 클라이언트 측 최대 인원 이중 검증
+    if (selectedRoom && formData.guestCount > selectedRoom.maxGuests) {
+      setError({ ko: `최대 ${selectedRoom.maxGuests}명까지 예약 가능합니다.`, en: `Maximum ${selectedRoom.maxGuests} guests allowed.`, ja: `最大${selectedRoom.maxGuests}名まで予約可能です。`, zh: `最多可预订${selectedRoom.maxGuests}位客人。` }[locale] || `Maximum ${selectedRoom.maxGuests} guests allowed.`);
+      return;
+    }
     if (!formData.agreedToPolicy) {
       setError(t('policyAgreementRequired'));
       return;

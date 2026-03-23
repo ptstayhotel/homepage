@@ -57,6 +57,31 @@ const ROOM_BASE_PRICES: Record<string, number> = {
   'party-suite': 170000,
 };
 
+// 객실별 기준 인원 (초과 시 추가요금 발생)
+const ROOM_BASE_GUESTS: Record<string, number> = {
+  standard: 2,
+  'standard-premium': 2,
+  deluxe: 2,
+  'family-twin': 2,
+  'family-triple': 3,
+  'royal-suite': 2,
+  'party-suite': 4,
+};
+
+const EXTRA_GUEST_FEE = 10000; // ₩10,000/인/박
+
+/**
+ * 추가 인원 정보 계산
+ */
+function getExtraGuestInfo(b: BookingRecord): { extraCount: number; fee: number } | null {
+  const baseGuests = ROOM_BASE_GUESTS[b.formData.roomId];
+  if (baseGuests == null) return null;
+  const extraCount = Math.max(0, b.formData.guestCount - baseGuests);
+  if (extraCount === 0) return null;
+  const nights = calculateNights(b.formData.checkIn, b.formData.checkOut);
+  return { extraCount, fee: extraCount * EXTRA_GUEST_FEE * nights };
+}
+
 function formatDateTime(iso: string): string {
   if (!iso) return '-';
   const d = new Date(iso);
@@ -266,7 +291,7 @@ export default function AdminPage() {
             {statusFilter === 'all' ? '예약 내역이 없습니다.' : `${statusFilter === 'pending' ? '대기' : statusFilter === 'confirmed' ? '확정' : '취소'} 상태의 예약이 없습니다.`}
           </div>
         ) : (
-          <table className="w-full text-xs border-collapse min-w-[1400px]">
+          <table className="w-full text-xs border-collapse min-w-[1520px]">
             <thead>
               <tr className="bg-slate-800 text-white text-left">
                 <th className="px-4 py-3 font-medium whitespace-nowrap">상태</th>
@@ -278,6 +303,7 @@ export default function AdminPage() {
                 <th className="px-4 py-3 font-medium whitespace-nowrap">체크인/아웃</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">룸 타입</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">인원</th>
+                <th className="px-4 py-3 font-medium whitespace-nowrap">추가요금</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">군인할인</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">방문방법</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">결제예정금액</th>
@@ -316,6 +342,18 @@ export default function AdminPage() {
                     {ROOM_LABELS[b.formData.roomId] || b.formData.roomId}
                   </td>
                   <td className="px-4 py-3 text-center whitespace-nowrap text-slate-600">{b.formData.guestCount}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right">
+                    {(() => {
+                      const extra = getExtraGuestInfo(b);
+                      if (!extra) return <span className="text-slate-400">-</span>;
+                      return (
+                        <span className="text-orange-600 font-medium">
+                          +{extra.fee.toLocaleString()}원
+                          <span className="block text-[10px] text-orange-400">{extra.extraCount}명×₩10,000/인/박</span>
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">
                     {b.formData.reservationType === 'military' ? (
                       <span className="text-blue-700 font-bold">YES</span>
