@@ -32,6 +32,7 @@ export interface Room {
   saturdayPrice: number; // in KRW (Saturday)
   baseGuests?: number;
   maxGuests: number;
+  extraGuestFee?: number; // 기준 초과 1인당 추가요금 (KRW/박)
   size: number; // in square meters
   amenities: RoomAmenity[];
   images: RoomImage[];

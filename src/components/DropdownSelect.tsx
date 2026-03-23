@@ -64,7 +64,7 @@ export default function DropdownSelect({
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full text-left border-b py-3 transition-all cursor-pointer flex items-center justify-between ${
           isDark
-            ? 'bg-transparent border-neutral-700 text-white font-body text-lg font-normal tracking-wider hover:border-neutral-400 focus:outline-none focus:border-white'
+            ? 'bg-transparent border-neutral-600 text-white font-body text-xl font-medium tracking-wider hover:border-neutral-300 focus:outline-none focus:border-accent-500'
             : 'bg-transparent border-neutral-300 text-neutral-900 font-body text-[0.95rem] font-light tracking-wide hover:border-neutral-500 focus:outline-none focus:border-primary-900'
         }`}
       >

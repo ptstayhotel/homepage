@@ -83,6 +83,17 @@ export default function RoomCard({ room, locale }: RoomCardProps) {
             </span>
           </div>
 
+          {/* 추가 인원 안내 */}
+          {room.extraGuestFee && room.extraGuestFee > 0 ? (
+            <p className="text-xs text-amber-600 mb-3">
+              {{ ko: `기준 ${room.baseGuests}인 초과 시 1인당 ₩${room.extraGuestFee.toLocaleString()} 추가`, en: `₩${room.extraGuestFee.toLocaleString()} per extra guest (base ${room.baseGuests})`, ja: `基準${room.baseGuests}名超過時 1名あたり ₩${room.extraGuestFee.toLocaleString()} 追加`, zh: `超过${room.baseGuests}人时每人加收 ₩${room.extraGuestFee.toLocaleString()}` }[locale]}
+            </p>
+          ) : room.baseGuests && room.baseGuests === room.maxGuests ? (
+            <p className="text-xs text-neutral-400 mb-3">
+              {{ ko: '추가 인원 불가', en: 'No extra guests', ja: '追加人数不可', zh: '不可加人' }[locale]}
+            </p>
+          ) : null}
+
           {/* Description */}
           <p className="text-sm text-neutral-500 line-clamp-2 mb-6 leading-relaxed">
             {description}

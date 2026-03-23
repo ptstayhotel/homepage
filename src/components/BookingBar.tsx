@@ -63,13 +63,13 @@ export default function BookingBar({ locale }: BookingBarProps) {
     };
 
     return (
-        <div className="w-full bg-[#111111] text-white border-b border-neutral-800">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4 md:py-8">
-                <div className="flex flex-col md:flex-row gap-3 md:gap-8 items-end">
+        <div className="w-full bg-[#111111]/95 backdrop-blur-sm text-white border-b border-neutral-800">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-5 md:py-8">
+                <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-end">
 
                     {/* Check-In */}
                     <div className="w-full md:flex-1 group">
-                        <label className="block text-[10px] tracking-[0.25em] text-neutral-500 mb-3 group-hover:text-neutral-300 transition-colors">
+                        <label className="block text-xs tracking-[0.25em] text-neutral-400 mb-2 group-hover:text-neutral-200 transition-colors font-medium">
                             {labels.checkIn}
                         </label>
                         <DatePickerInput
@@ -83,7 +83,7 @@ export default function BookingBar({ locale }: BookingBarProps) {
 
                     {/* Check-Out */}
                     <div className="w-full md:flex-1 group">
-                        <label className="block text-[10px] tracking-[0.25em] text-neutral-500 mb-3 group-hover:text-neutral-300 transition-colors">
+                        <label className="block text-xs tracking-[0.25em] text-neutral-400 mb-2 group-hover:text-neutral-200 transition-colors font-medium">
                             {labels.checkOut}
                         </label>
                         <DatePickerInput
@@ -96,21 +96,21 @@ export default function BookingBar({ locale }: BookingBarProps) {
                     </div>
 
                     {/* Guests */}
-                    <div className="w-full md:w-32 group">
-                        <label className="block text-[10px] tracking-[0.25em] text-neutral-500 mb-3 group-hover:text-neutral-300 transition-colors">
+                    <div className="w-full md:w-36 group">
+                        <label className="block text-xs tracking-[0.25em] text-neutral-400 mb-2 group-hover:text-neutral-200 transition-colors font-medium">
                             {labels.guests}
                         </label>
                         <DropdownSelect
                             value={guests}
                             onChange={setGuests}
-                            options={[1, 2, 3, 4, 5, 6].map(n => ({ value: String(n), label: String(n) }))}
+                            options={[1, 2, 3, 4].map(n => ({ value: String(n), label: `${n}${{ ko: '명', en: '', ja: '名', zh: '位' }[locale]}` }))}
                             theme="dark"
                         />
                     </div>
 
                     {/* Reservation Type */}
-                    <div className="w-full md:w-40 group">
-                        <label className="block text-[10px] tracking-[0.25em] text-neutral-500 mb-3 group-hover:text-neutral-300 transition-colors">
+                    <div className="w-full md:w-44 group">
+                        <label className="block text-xs tracking-[0.25em] text-neutral-400 mb-2 group-hover:text-neutral-200 transition-colors font-medium">
                             {labels.type}
                         </label>
                         <DropdownSelect
@@ -124,7 +124,7 @@ export default function BookingBar({ locale }: BookingBarProps) {
                     {/* Submit Button */}
                     <button
                         onClick={handleBooking}
-                        className="w-full md:w-auto h-[54px] px-6 md:px-10 bg-white text-black font-body text-xs tracking-[0.3em] font-medium uppercase hover:bg-neutral-200 transition-all duration-300 mt-1 md:mt-0"
+                        className="w-full md:w-auto h-[56px] px-8 md:px-12 bg-accent-500 text-primary-900 font-body text-sm tracking-[0.2em] font-bold uppercase hover:bg-white transition-all duration-300 mt-1 md:mt-0"
                     >
                         {buttonLabel[locale]}
                     </button>

@@ -123,14 +123,15 @@ export const rooms: Room[] = [
     nameKo: '패밀리 트윈',
     nameEn: 'Family Twin',
     descriptionKo:
-      '가족 여행에 최적화된 트윈 베드 객실입니다. 두 개의 더블 베드가 제공되어 최대 4인까지 편안하게 투숙할 수 있습니다. 넓은 공간과 가족 친화적 편의시설을 갖추고 있습니다.',
+      '가족 여행에 최적화된 트윈 베드 객실입니다. 두 개의 더블 베드가 제공되어 기준 2인, 최대 3인까지 투숙할 수 있습니다. 넓은 공간과 가족 친화적 편의시설을 갖추고 있습니다.',
     descriptionEn:
-      'Optimized for family travel with twin bed configuration. Features two double beds accommodating up to 4 guests comfortably. Spacious layout with family-friendly amenities.',
+      'Optimized for family travel with twin bed configuration. Features two double beds accommodating up to 3 guests (base 2). Spacious layout with family-friendly amenities.',
     pricePerNight: 90000,
     fridayPrice: 100000,
     saturdayPrice: 115000,
     baseGuests: 2,
     maxGuests: 3,
+    extraGuestFee: 10000,
     size: 32,
     bedType: 'twin',
     viewType: 'garden',
@@ -153,14 +154,15 @@ export const rooms: Room[] = [
     nameKo: '패밀리 트리플',
     nameEn: 'Family Triple',
     descriptionKo:
-      '대가족을 위한 넓은 객실입니다. 더블 베드 1개와 싱글 베드 2개가 제공되어 최대 5인까지 투숙 가능합니다. 독립된 드레스룸과 넓은 욕실이 특징입니다.',
+      '대가족을 위한 넓은 객실입니다. 더블 베드 1개와 싱글 베드 2개가 제공되어 기준 3인, 최대 4인까지 투숙 가능합니다. 독립된 드레스룸과 넓은 욕실이 특징입니다.',
     descriptionEn:
-      'A spacious room designed for larger families. Features one double bed and two single beds, accommodating up to 5 guests. Includes a separate dressing area and large bathroom.',
+      'A spacious room designed for larger families. Features one double bed and two single beds, accommodating up to 4 guests (base 3). Includes a separate dressing area and large bathroom.',
     pricePerNight: 120000,
     fridayPrice: 135000,
     saturdayPrice: 150000,
     baseGuests: 3,
     maxGuests: 4,
+    extraGuestFee: 10000,
     size: 38,
     bedType: 'twin',
     viewType: 'garden',
@@ -210,9 +212,9 @@ export const rooms: Room[] = [
     nameKo: '파티 스위트',
     nameEn: 'Party Suite',
     descriptionKo:
-      '특별한 모임을 위한 최대 규모의 스위트 객실입니다. 넓은 거실 공간은 소규모 파티나 비즈니스 미팅에 적합하며, 최대 6인이 투숙 가능합니다. 프라이빗한 분위기에서 특별한 순간을 만드세요.',
+      '특별한 모임을 위한 최대 규모의 스위트 객실입니다. 넓은 거실 공간은 소규모 파티나 비즈니스 미팅에 적합하며, 최대 4인이 투숙 가능합니다. 프라이빗한 분위기에서 특별한 순간을 만드세요.',
     descriptionEn:
-      'Our largest suite designed for special gatherings. The spacious living area is perfect for intimate parties or business meetings, accommodating up to 6 guests. Create memorable moments in a private setting.',
+      'Our largest suite designed for special gatherings. The spacious living area is perfect for intimate parties or business meetings, accommodating up to 4 guests. Create memorable moments in a private setting.',
     pricePerNight: 170000,
     fridayPrice: 200000,
     saturdayPrice: 225000,
@@ -281,6 +283,24 @@ export const calculateRoomTotal = (room: Room, checkIn: string, checkOut: string
     current.setDate(current.getDate() + 1);
   }
   return total;
+};
+
+/**
+ * Calculate extra guest fee for a stay
+ * 기준 인원 초과 시 1인당 추가요금 × 초과 인원 × 박 수
+ */
+export const calculateExtraGuestFee = (room: Room, guestCount: number, nights: number): number => {
+  const baseGuests = room.baseGuests || room.maxGuests;
+  const extraGuests = Math.max(0, guestCount - baseGuests);
+  return extraGuests * (room.extraGuestFee || 0) * nights;
+};
+
+/**
+ * Get the number of extra guests beyond base capacity
+ */
+export const getExtraGuestCount = (room: Room, guestCount: number): number => {
+  const baseGuests = room.baseGuests || room.maxGuests;
+  return Math.max(0, guestCount - baseGuests);
 };
 
 /**

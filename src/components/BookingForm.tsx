@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from '@/lib/translations';
 import { Locale, BookingFormData, ReservationType, TransportationType } from '@/types';
-import { rooms, getRoomName, formatPrice, calculateRoomTotal } from '@/config/rooms';
+import { rooms, getRoomName, formatPrice, calculateRoomTotal, calculateExtraGuestFee, getExtraGuestCount } from '@/config/rooms';
 import DatePickerInput from './DatePickerInput';
 import DropdownSelect from './DropdownSelect';
 import { getTodayString, getTomorrowString, calculateNights, formatCurrency } from '@/lib/utils';
@@ -81,7 +81,10 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
 
   // Calculate total price (day-by-day for Fri/Sat rates)
   const nights = calculateNights(formData.checkIn, formData.checkOut);
-  const totalPrice = selectedRoom ? calculateRoomTotal(selectedRoom, formData.checkIn, formData.checkOut) : 0;
+  const roomBaseTotal = selectedRoom ? calculateRoomTotal(selectedRoom, formData.checkIn, formData.checkOut) : 0;
+  // 추가 인원 요금
+  const extraGuestFeeTotal = selectedRoom ? calculateExtraGuestFee(selectedRoom, formData.guestCount, nights) : 0;
+  const totalPrice = roomBaseTotal + extraGuestFeeTotal;
 
   // Long-stay promo discount calculation (disabled when military promo is active)
   const promoBlocked = (isLongstayPromo && formData.reservationType === 'military') || isMilitaryPromo;
@@ -92,9 +95,12 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
     return { rate: 0, label: null, amount: 0 };
   })();
 
-  // Military fixed rate: $64/night
+  // Military fixed rate: $64/night (추가 인원 요금 없음)
   const militaryFixedRate = isMilitaryPromo ? nights * 64 : 0;
   const finalPrice = isMilitaryPromo ? militaryFixedRate : (promoDiscount.rate > 0 ? totalPrice - promoDiscount.amount : totalPrice);
+
+  // 전체 객실 중 최대 인원 (드롭다운 상한)
+  const overallMaxGuests = Math.max(...rooms.map(r => r.maxGuests));
 
   // Check if selected dates include Friday or Saturday (weekend surcharge)
   const includesWeekend = (() => {
@@ -353,7 +359,7 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                     setFormData(prev => ({ ...prev, guestCount: Number(val) }));
                     setError('');
                   }}
-                  options={[1, 2, 3, 4, 5, 6].map((n) => ({
+                  options={Array.from({ length: overallMaxGuests }, (_, i) => i + 1).map((n) => ({
                     value: String(n),
                     label: `${n} ${{ ko: '명', en: n === 1 ? 'guest' : 'guests', ja: '名', zh: '位' }[locale]}`,
                   }))}
@@ -459,23 +465,38 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className={`font-serif text-xl ${
-                        formData.roomId === room.id ? 'text-accent-500' : 'text-primary-900'
-                      }`}>
-                        {formatPrice(calculateRoomTotal(room, formData.checkIn, formData.checkOut), locale)}
-                      </span>
-                      <span className={`text-sm block ${
-                        formData.roomId === room.id ? 'text-white/70' : 'text-neutral-500'
-                      }`}>
-                        {nights}{{ ko: '박 합계', en: ' night total', ja: '泊 合計', zh: '晚 总计' }[locale]}
-                      </span>
-                      {includesWeekend && (
-                        <span className={`text-xs block mt-1 ${
-                          formData.roomId === room.id ? 'text-amber-300' : 'text-amber-600'
-                        }`}>
-                          {t('weekendRateApplied')}
-                        </span>
-                      )}
+                      {(() => {
+                        const roomTotal = calculateRoomTotal(room, formData.checkIn, formData.checkOut);
+                        const extraFee = calculateExtraGuestFee(room, formData.guestCount, nights);
+                        return (
+                          <>
+                            <span className={`font-serif text-xl ${
+                              formData.roomId === room.id ? 'text-accent-500' : 'text-primary-900'
+                            }`}>
+                              {formatPrice(roomTotal + extraFee, locale)}
+                            </span>
+                            <span className={`text-sm block ${
+                              formData.roomId === room.id ? 'text-white/70' : 'text-neutral-500'
+                            }`}>
+                              {nights}{{ ko: '박 합계', en: ' night total', ja: '泊 合計', zh: '晚 总计' }[locale]}
+                            </span>
+                            {extraFee > 0 && (
+                              <span className={`text-xs block mt-1 ${
+                                formData.roomId === room.id ? 'text-amber-300' : 'text-amber-600'
+                              }`}>
+                                {{ ko: `추가 인원 ${getExtraGuestCount(room, formData.guestCount)}명 +${formatPrice(extraFee, locale)}`, en: `Extra guest ×${getExtraGuestCount(room, formData.guestCount)} +${formatPrice(extraFee, locale)}`, ja: `追加${getExtraGuestCount(room, formData.guestCount)}名 +${formatPrice(extraFee, locale)}`, zh: `加人${getExtraGuestCount(room, formData.guestCount)}位 +${formatPrice(extraFee, locale)}` }[locale]}
+                              </span>
+                            )}
+                            {includesWeekend && (
+                              <span className={`text-xs block mt-1 ${
+                                formData.roomId === room.id ? 'text-amber-300' : 'text-amber-600'
+                              }`}>
+                                {t('weekendRateApplied')}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </label>
                 ))}
@@ -636,6 +657,15 @@ export default function BookingForm({ locale, preselectedRoomId, initialCheckIn,
                         </span>
                       </span>
                     </div>
+                    {/* 추가 인원 요금 */}
+                    {extraGuestFeeTotal > 0 && selectedRoom && (
+                      <div className="flex justify-between mb-2 text-amber-700">
+                        <span className="text-sm">
+                          {{ ko: `추가 인원 ${getExtraGuestCount(selectedRoom, formData.guestCount)}명 × ${nights}박 × ₩10,000`, en: `Extra guest ×${getExtraGuestCount(selectedRoom, formData.guestCount)} × ${nights} nights × ₩10,000`, ja: `追加${getExtraGuestCount(selectedRoom, formData.guestCount)}名 × ${nights}泊 × ₩10,000`, zh: `加人${getExtraGuestCount(selectedRoom, formData.guestCount)}位 × ${nights}晚 × ₩10,000` }[locale]}
+                        </span>
+                        <span className="font-medium">+{formatCurrency(extraGuestFeeTotal, locale)}</span>
+                      </div>
+                    )}
                     {/* Long-stay promo discount line */}
                     {isLongstayPromo && promoBlocked && (
                       <div className="p-3 mb-2 bg-red-50 border border-red-200 text-red-700 text-xs">

@@ -147,6 +147,15 @@ export default async function RoomDetailPage({ params }: RoomDetailPageProps) {
                       <>{room.maxGuests} {tCommon('guests')}</>
                     )}
                   </span>
+                  {room.extraGuestFee && room.extraGuestFee > 0 ? (
+                    <span className="block text-amber-400 text-xs mt-1">
+                      {{ ko: `기준 초과 1인당 ₩${room.extraGuestFee.toLocaleString()} 추가/박`, en: `₩${room.extraGuestFee.toLocaleString()} per extra guest/night`, ja: `基準超過 1名あたり ₩${room.extraGuestFee.toLocaleString()}/泊`, zh: `超出基准每人 ₩${room.extraGuestFee.toLocaleString()}/晚` }[locale]}
+                    </span>
+                  ) : room.baseGuests && room.baseGuests === room.maxGuests ? (
+                    <span className="block text-neutral-400 text-xs mt-1">
+                      {{ ko: '추가 인원 불가', en: 'No extra guests', ja: '追加人数不可', zh: '不可加人' }[locale]}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="bg-white/5 rounded-lg p-4">
                   <span className="text-neutral-400 text-sm block mb-1">
