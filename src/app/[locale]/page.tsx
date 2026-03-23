@@ -85,32 +85,6 @@ function HotelJsonLd({ locale }: { locale: string }) {
   );
 }
 
-// 홈 신뢰 정보 모듈 — 핵심 운영 정보를 빠르게 전달
-const trustItems: { icon: string; label: Record<string, string> }[] = [
-  { icon: '🕐', label: { ko: '체크인 15:00', en: 'Check-in 15:00', ja: 'チェックイン 15:00', zh: '入住 15:00' } },
-  { icon: '🕛', label: { ko: '체크아웃 12:00', en: 'Check-out 12:00', ja: 'チェックアウト 12:00', zh: '退房 12:00' } },
-  { icon: '🅿️', label: { ko: '주차 가능', en: 'Parking Available', ja: '駐車場あり', zh: '可停车' } },
-  { icon: '💳', label: { ko: '현장 결제 (카드/현금)', en: 'Pay on-site (Card/Cash)', ja: '現地決済 (カード/現金)', zh: '到店付款 (卡/现金)' } },
-  { icon: '✉️', label: { ko: '호텔 확인 후 확정', en: 'Confirmed after review', ja: 'ホテル確認後確定', zh: '酒店确认后确定' } },
-];
-
-function TrustInfoStrip({ locale }: { locale: string }) {
-  return (
-    <div className="bg-white border-b border-neutral-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4">
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 md:gap-x-10">
-          {trustItems.map((item, i) => (
-            <div key={i} className="flex items-center gap-1.5 text-xs sm:text-sm text-neutral-600">
-              <span className="text-sm">{item.icon}</span>
-              <span>{item.label[locale] || item.label.en}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default async function HomePage({ params }: HomePageProps) {
   const { locale } = params;
 
@@ -121,8 +95,6 @@ export default async function HomePage({ params }: HomePageProps) {
       <HeroSection locale={locale as Locale} />
       {/* Booking Bar - Quick Reservation */}
       <BookingBar locale={locale as Locale} />
-      {/* Trust Info Strip */}
-      <TrustInfoStrip locale={locale} />
       {/* Special Offers Section */}
       <SpecialOffersSection locale={locale as Locale} />
     </>
